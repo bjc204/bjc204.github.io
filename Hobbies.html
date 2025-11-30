@@ -167,18 +167,29 @@
     margin: 20px 0;
     position: relative;">
   
-  <iframe 
-    src="./golf_scores_7.html"
-    frameborder="0"
-    style="
-      width: 1200px;          /* pretend the content is this wide */
-      height: 500px;
-      border:0;
-      transform: scale(0.33); /* shrink to fit mobile */
-      transform-origin: 0 0;  /* scale from top-left */
-    ">
+ <div id="golf-container" 
+     style="width: 100%; overflow: hidden; position: relative;">
+
+  <iframe id="golf-frame"
+          src="./golf_scores_7.html"
+          frameborder="0"
+          style="width: 1200px; height: 600px; border:0; transform-origin: 0 0;">
   </iframe>
 </div>
+
+<script>
+// Auto-scale iframe based on screen width
+(function() {
+    var iframe = document.getElementById('golf-frame');
+    var container = document.getElementById('golf-container');
+
+    var originalWidth = 1200;   // width of your exported plot
+    var containerWidth = container.offsetWidth;
+
+    var scale = containerWidth / originalWidth;
+    iframe.style.transform = "scale(" + scale + ")";
+})();
+</script>
 
   </article>
 </div>
