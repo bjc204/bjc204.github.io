@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smoke, Volcanoes and Plant Light</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+/* layout: one reading column (~68ch) with charts allowed to run a little wider; sticky section nav */
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --ink: #16212e;
+  --muted: #56636f;
+  --rule: #d5dce3;
+  --smoke: #b86e00;
+  --sulfate: #3f7fbf;
+  --forest: #1f6b3a;
+  --navy: #08306b;
+  --mid: #2171b5;
+  --light: #9ecae1;
+  --neg: #b2402f;
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-ui: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161c; --surface: #19212a; --ink: #e6ebf0; --muted: #9aa7b4; --rule: #2e3a46;
+    --smoke: #e39a2e; --sulfate: #7fb2e5; --forest: #5fb57d; --navy: #9cc3ee; --mid: #4f95d6; --light: #2c5d8a;
+    --neg: #e2786a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161c; --surface: #19212a; --ink: #e6ebf0; --muted: #9aa7b4; --rule: #2e3a46;
+  --smoke: #e39a2e; --sulfate: #7fb2e5; --forest: #5fb57d; --navy: #9cc3ee; --mid: #4f95d6; --light: #2c5d8a;
+  --neg: #e2786a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 18px; line-height: 1.6; }
+a { color: var(--mid); }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--smoke); outline-offset: 2px; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+.prose { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.2; }
+h1 { font-size: clamp(30px, 4.6vw, 46px); font-weight: 700; margin: 0 0 18px; letter-spacing: -0.01em; }
+h2 { font-size: 30px; font-weight: 700; margin: 0 0 14px; }
+h3 { font-size: 21px; font-weight: 600; margin: 28px 0 8px; }
+p { margin: 0 0 16px; }
+.ui { font-family: var(--font-ui); }
+header.hero { padding: 56px 0 36px; border-bottom: 1px solid var(--rule); }
+.kicker { font-family: var(--font-ui); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--smoke); font-weight: 600; margin-bottom: 14px; }
+.authors { font-family: var(--font-ui); font-size: 15px; color: var(--muted); margin-bottom: 24px; }
+.lede { font-size: 20px; }
+nav.toc { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--rule); }
+nav.toc ol { list-style: none; display: flex; gap: 4px 18px; flex-wrap: wrap; margin: 0 auto; padding: 10px 20px; max-width: 1040px; font-family: var(--font-ui); font-size: 14px; counter-reset: s; }
+nav.toc li { counter-increment: s; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a::before { content: counter(s) " "; color: var(--smoke); font-weight: 600; }
+nav.toc a:hover { color: var(--ink); }
+section { padding: 52px 0 20px; border-bottom: 1px solid var(--rule); }
+.step { font-family: var(--font-ui); font-size: 13px; color: var(--smoke); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+.figure { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 16px 12px; margin: 22px 0 26px; }
+.figure .chart { width: 100%; height: 420px; }
+.figure .chart.short { height: 330px; }
+.figure .chart.tall { height: 500px; }
+.caption { font-family: var(--font-ui); font-size: 14px; line-height: 1.5; color: var(--muted); margin: 10px 0 0; max-width: 90ch; }
+.caption b { color: var(--ink); }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; font-family: var(--font-ui); font-size: 14px; }
+.controls .label { color: var(--muted); margin-right: 4px; }
+.seg button { font-family: var(--font-ui); font-size: 14px; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.seg button:hover { border-color: var(--muted); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+label.check { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.duel { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 26px 0 30px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 20px; border-top: 4px solid var(--c, var(--ink)); }
+.card .big { font-family: var(--font-ui); font-size: 44px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--c); }
+.card .unit { font-family: var(--font-ui); font-size: 14px; color: var(--muted); margin: 6px 0 12px; }
+.card p { font-size: 16px; margin: 0; }
+.card .src { font-family: var(--font-ui); font-size: 13px; color: var(--muted); margin-top: 10px; }
+.stepper-note { font-family: var(--font-ui); font-size: 15px; background: var(--bg); border-left: 3px solid var(--smoke); padding: 10px 14px; margin: 4px 0 10px; min-height: 76px; }
+table.sites { width: 100%; border-collapse: collapse; font-family: var(--font-ui); font-size: 14px; font-variant-numeric: tabular-nums; }
+table.sites th, table.sites td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--rule); }
+table.sites th { color: var(--muted); font-weight: 500; }
+.tablewrap { overflow-x: auto; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.eq { font-family: var(--font-ui); font-size: 15px; background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; padding: 10px 14px; overflow-x: auto; margin: 0 0 16px; }
+.refs { font-size: 15px; }
+.refs li { margin-bottom: 6px; }
+footer { padding: 30px 0 60px; font-family: var(--font-ui); font-size: 14px; color: var(--muted); }
+.pill { font-family: var(--font-ui); font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; }
+@media (max-width: 700px) {
+  body { font-size: 17px; }
+  .duel { grid-template-columns: 1fr; }
+  .figure .chart { height: 380px; }
+  .figure .chart.tall { height: 560px; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">Stratospheric aerosol injection · natural analogs</div>
+    <h1>Multiple lines of evidence suggest modest but positive radiative effects on vegetation from stratospheric aerosol injection</h1>
+    <div class="authors">Brendan Clark (Cornell University) · Ben Kravitz (Indiana University) · Daniele Visioni (Cornell University) · Manuel Lerdau (University of Virginia)</div>
+    <div class="prose">
+      <p class="lede">Stratospheric aerosol injection (SAI) to limit global warming overshoot would reduce total solar radiation while increasing the proportion of diffuse light reaching Earth's surface, creating competing effects on plant growth. Analog studies using volcanic eruptions show impacts ranging from significantly negative to strongly positive (Proctor et al., 2018; Gu et al., 2003), and numerical models suggest radiative effects from SAI would range from neutral to slightly positive (Xia et al., 2016; Fan et al., 2021; Clark et al., 2023).</p>
+      <p>Here we show, using eddy covariance measurements at eight AmeriFlux sites (four maize and four forest), that radiative effects of smoke are almost always positive. We attribute inconsistencies in the literature to limitations in the underlying assumptions and methods of previous analog studies; addressing these issues brings their results into agreement with our own, and with numerical models.</p>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <ol>
+    <li><a href="#puzzle">The disagreement</a></li>
+    <li><a href="#smoke">A new analog: smoke</a></li>
+    <li><a href="#sulfate">Smoke vs sulfate</a></li>
+    <li><a href="#gu">Revisiting Gu</a></li>
+    <li><a href="#proctor">Revisiting Proctor</a></li>
+    <li><a href="#sai">Effects of SAI</a></li>
+    <li><a href="#sink">Carbon sink</a></li>
+    <li><a href="#caveats">Data and code</a></li>
+  </ol>
+</nav>
+
+<main>
+<!-- 1 -->
+<section id="puzzle">
+  <div class="wrap">
+    <div class="step">1 · The problem</div>
+    <h2>One volcanic analog, two opposite answers</h2>
+    <div class="prose">
+      <p>Global numerical modeling studies have indicated that the counteracting effects of radiation from SAI would tend to have an overall net effect on crops and natural vegetation ranging from neutral to slightly positive. However, studies using natural analogs for SAI to confirm or disprove such modeling studies have so far been limited, and the two best known reach opposite conclusions:</p>
+    </div>
+    <div class="duel">
+      <div class="card" style="--c: var(--forest)">
+        <div class="big">+23%</div>
+        <div class="unit">gross primary production (GPP), Harvard Forest, 1992</div>
+        <p>Gu et al. (2003) found the radiative effects of the 1991 Mt. Pinatubo eruption to increase GPP in the Harvard Forest by 23%.</p>
+        <div class="src">Gu et al., <i>Science</i> 299, 2035–2038 (2003)</div>
+      </div>
+      <div class="card" style="--c: var(--neg)">
+        <div class="big">−5.4%</div>
+        <div class="unit">global maize yield, insolation effect of SAI</div>
+        <p>Proctor et al. (2018) used volcanic eruptions as an analog for SAI and concluded that its radiative effects could significantly reduce crop yields, potentially offsetting the benefits of lower temperatures.</p>
+        <div class="src">Proctor et al., <i>Nature</i> 560, 480–483 (2018)</div>
+      </div>
+    </div>
+    <div class="prose">
+      <p>Both studies use the same kind of natural experiment, a large eruption that dims and diffuses sunlight, yet one finds a large gain and the other a significant loss. This site follows how we tried to resolve that discrepancy: first by adding a new, well-observed analog, wildfire smoke, and then by revisiting the methods of both earlier studies.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="smoke">
+  <div class="wrap">
+    <div class="step">2 · A new analog</div>
+    <h2>Wildfire smoke dims and diffuses sunlight much like volcanic sulfate</h2>
+    <div class="prose">
+      <p>Here we utilize eddy covariance measurements at four cropland and four forested AmeriFlux sites to understand how changes in radiation during wildfire smoke events impact GPP. Wildfire smoke events, similar to the sulfate aerosols emitted during large volcanic eruptions and proposed for SAI, increase the proportion of diffuse radiation reaching the surface while simultaneously reducing total incoming solar radiation. They provide a more recent analog for SAI, offering additional observational data to better understand its potential radiative effects.</p>
+    </div>
+    <div class="tablewrap">
+      <table class="sites" id="site-table">
+        <thead><tr><th>Site</th><th>Vegetation</th><th>Matched smoke time steps (n)</th><th>Radiation effect<br><span style="font-weight:400">(less light + more diffuse)</span></th><th>Total effect<br><span style="font-weight:400">(radiation + weather: VPD, temperature, soil moisture)</span></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3>Smoke-induced light changes raise GPP at every site</h3>
+    <div class="prose">
+      <p>Across the eight AmeriFlux sites, wildfire smoke-induced radiation perturbations never decreased GPP, with seven of the eight sites exhibiting significantly positive GPP responses. Wildfire smoke also tends to lower air temperature and VPD by reducing the solar radiation reaching the surface, which increased GPP at many of the sites. However, we cannot separate these changes from those caused by the weather conditions that accompany smoke events. Soil moisture is not significantly affected by wildfire smoke at any sites. The total effect of smoke increases overall GPP by 4.6 to 18.9% for maize sites, and by 1.5 to 18.3% for forest sites.</p>
+    </div>
+    <div class="figure">
+      <div class="controls">
+        <span class="label">Show</span>
+        <div class="seg" id="seg-fig2"></div>
+      </div>
+      <div id="chart-fig2" class="chart" role="img" aria-label="Bar chart of smoke effects on GPP by site and driver"></div>
+      <p class="caption"><b>The individual and total effects of smoke on GPP at each AmeriFlux site.</b> The total GPP response is the sum of the net radiation, VPD, soil moisture and temperature effects. Error bars are 95% confidence intervals from 1,000 bootstrap samples that resample whole days. Pick a site to see its breakdown by driver. (Manuscript Fig. 2.)</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="sulfate">
+  <div class="wrap">
+    <div class="step">3 · Is smoke a fair stand-in?</div>
+    <h2>For a given aerosol load, sulfate diffuses more light than smoke</h2>
+    <div class="prose">
+      <p>We used the libRadtran radiative transfer model to quantify how additional aerosols alter the amount and composition of sunlight reaching the surface, comparing wildfire smoke with stratospheric sulfate aerosols, the proposed aerosol for SAI. Smoke optical properties were taken as the median AERONET retrievals across all smoke time steps at the eight sites (single-scattering albedo 0.96, asymmetry parameter 0.65, Ångström exponent 1.69). Stratospheric sulfate was represented by a lognormal size distribution with an effective radius of 0.4 µm, characteristic of the aerosol produced by the 1991 Mt. Pinatubo eruption, and treated as non-absorbing.</p>
+      <p>libRadtran tends to overestimate the fraction of diffuse radiation from wildfire smoke. For a given AOD, the effects of SAI with sulfate would increase GPP more than smoke.</p>
+    </div>
+    <div class="figure">
+      <div class="controls">
+        <label class="check"><input type="checkbox" id="chk-size"> Show other particle sizes (sulfate effective radius 0.2–0.6 µm, smoke Ångström exponent 1.39–1.88)</label>
+      </div>
+      <div id="chart-light" class="chart" role="img" aria-label="Scatter of observed smoke light changes with libRadtran curves for smoke and sulfate"></div>
+      <p class="caption"><b>Light environment.</b> Change in PAR diffuse fraction versus PAR loss for observed smoke time steps (grey points), and for smoke and sulfate aerosol simulated with libRadtran (lines). Stars indicate Pinatubo values based on Gu et al. (2003). The size toggle adds the particle-size sensitivity runs. (Manuscript Fig. 3a and Extended Data Fig. 4.)</p>
+    </div>
+    <div class="prose">
+      <p>Results from Proctor et al. (2018) and Gu et al. (2003) fall well outside of the range seen in any of the AmeriFlux sites. Proctor et al. (2018) use country-level crop yields rather than site-level photosynthesis, so their results are not directly comparable. However, Gu et al. (2003) report results from Harvard Forest, which is included in our analysis (US-Ha1).</p>
+    </div>
+    <div class="figure">
+      <div class="controls">
+        <span class="label">Ecosystem</span>
+        <div class="seg" id="seg-resp"></div>
+      </div>
+      <div id="chart-resp" class="chart" role="img" aria-label="Radiation effect on GPP versus added aerosol optical depth"></div>
+      <p class="caption"><b>GPP response to added aerosol.</b> Radiation effect on maize or forest GPP of the libRadtran-simulated smoke and sulfate light changes, from the site regressions fitted to AmeriFlux observations. Lines show the mean of the four sites and shading the range across sites. Black points are the observed smoke radiation effects with 95% confidence intervals. The maize panel shows Proctor et al.'s maize yield insolation effect; the forest panel shows Gu et al.'s Pinatubo effect at Harvard Forest. (Manuscript Fig. 3b, c.)</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="gu">
+  <div class="wrap">
+    <div class="step">4 · Revisiting Gu et al. (2003)</div>
+    <h2>The 23% gain at Harvard Forest comes from how the model was fitted</h2>
+    <div class="prose">
+      <p>Gu et al. (2003) use a regression model that cannot separate changes in weather from correlated changes in radiation and fit its parameters separately for each year to clear-sky Net Ecosystem Exchange (NEE) at Harvard Forest, using radiation measured at Albany. While there are structural differences between Gu et al. (2003) and our regression model, such as the form of the light response, their use of shortwave radiation rather than PAR, and their fitting to NEE rather than GPP, we show that the gap between our estimates comes from how the models are fitted. Step through the corrections below; each one is applied on top of the last, using the same Harvard Forest smoke days.</p>
+    </div>
+    <div class="figure">
+      <div class="controls">
+        <span class="label">Step</span>
+        <div class="seg" id="seg-gu"></div>
+      </div>
+      <div class="stepper-note" id="gu-note" aria-live="polite"></div>
+      <div id="chart-gu" class="chart" role="img" aria-label="Box plots of smoke radiation effect on GPP at Harvard Forest under five model versions"></div>
+      <p class="caption"><b>Effects of wildfire smoke-induced radiation changes on GPP at Harvard Forest.</b> Points are individual smoke days, boxes span the interquartile range, and percentages give the overall effect. To allow a direct comparison with Gu et al. (2003), periods of extreme heat and high atmospheric demand are not filtered out. (Manuscript Fig. 4a.)</p>
+    </div>
+    <div class="prose">
+      <p>Applied to Pinatubo, our regression suggests a GPP insolation effect at Harvard Forest of about +1%. We also note that while Gu et al. (2003) reported an NEE increase of 18% in 1992, the data from FLUXNET now shows NEE was insignificantly reduced (−1%) at Harvard Forest the year after Pinatubo; these differences are likely due to reprocessing and gap filling.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="proctor">
+  <div class="wrap">
+    <div class="step">5 · Revisiting Proctor et al. (2018)</div>
+    <h2>Area weighting and the 1992 southern African drought remove the maize loss</h2>
+    <div class="prose">
+      <p>Proctor et al. (2018) also use an ordinary least squares regression, like our analysis, fitting data from 1980–2005. However, their regression is on country-level data and applies no area weighting, so the estimated response is the average response of a country in their sample, regardless of how much of the crop it grows. Weighting each country by its maize harvested area changes the estimated negative effect of reduced insolation from volcanic eruptions on maize yield from −5.4% to −3.0%, and the 95% confidence interval of the weighted estimate includes zero. Area weighting also allows a better comparison to crop model simulations, as they typically operate under a fixed map of harvested area (Jägermeyr et al., 2021).</p>
+      <p>Additionally, the regression model used by Proctor et al. (2018) relies on only a few years after eruptions (1982–83 for El Chichón and 1992 for Mount Pinatubo) to estimate the insolation effect of aerosols. The anomalously large 1992 drought in southern Africa is largely unexplained by the controls in Proctor et al.'s model (temperature, precipitation, cloud cover and ENSO). This drought was caused by a strong El Niño event, not by Pinatubo (Ibebuchi, 2021).</p>
+    </div>
+    <div class="figure">
+      <div id="chart-resid" class="chart short" role="img" aria-label="Line chart of unexplained maize yield change for southern Africa and rest of world, 1988 to 1996"></div>
+      <p class="caption"><b>Maize yield changes not explained by Proctor et al.'s (2018) controls</b> (temperature, precipitation, cloud cover and ENSO), averaged over southern Africa (South Africa, Zimbabwe, Zambia, Malawi, Mozambique, Botswana, Namibia, Lesotho and Eswatini) and the rest of the world, 1988–1996. (Manuscript Fig. 4b.)</p>
+    </div>
+    <div class="prose">
+      <p>Maize yields there were about 40% lower than the controls predict, while yields in the rest of the world were close to expected. Because this drought coincides with the year following Pinatubo, much of the loss is erroneously attributed to insolation. Combined with area weighting, this causes the insolation effect to be zero, not negative. For the other crops (rice, soybean, and wheat), area weighting causes the insolation effect to be indistinct from zero.</p>
+    </div>
+    <div class="figure">
+      <div class="controls">
+        <span class="label">Crop</span>
+        <div class="seg" id="seg-crop"></div>
+      </div>
+      <div id="chart-proctor" class="chart" role="img" aria-label="Grouped bar chart of partial and total effects of SRM on crop yield for three regression versions"></div>
+      <p class="caption"><b>Projected effects of solar radiation modification on crop yield</b> (G3 SAI scenario vs RCP4.5, 2050–2069; see Proctor et al., 2018) through temperature, insolation, cloud cover and precipitation, and their total, in log points × 100. Bars show Proctor et al.'s regression as published, the same regression with each country weighted by its harvested area, and the area-weighted regression with southern Africa excluded. Error bars are 95% confidence intervals. (Manuscript Fig. 4c and Extended Data Fig. 2.)</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="sai">
+  <div class="wrap">
+    <div class="step">6 · Applying the smoke relationships to SAI</div>
+    <h2>Under SAI, more diffuse light outweighs the loss of total light</h2>
+    <div class="prose">
+      <p>We drove each site's regression with output from the Community Earth System Model version 2 (CESM2-WACCM6) for the G6-1.5K-SAI scenario, which injects SO₂ in equal amounts at 30°N and 30°S to hold global mean temperature at 1.5 K above preindustrial under SSP2-4.5 (Lee et al., 2026). For each site and calendar month over 2065–2084, the CESM2-simulated changes in light and diffuse fraction were applied to that site's tower observations.</p>
+      <p>At six sites, the benefit from enhanced diffuse radiation outweighs the reduction in GPP from less total radiation, with two sites showing the net effect to be zero. Overall, most sites show an increase to GPP under SAI of about 2% due to more favorable radiation. Two out of the four maize sites suggest no effect of radiation from SAI on GPP, consistent with the revised Proctor et al. (2018) results.</p>
+    </div>
+    <div class="figure">
+      <div id="chart-sai" class="chart" role="img" aria-label="Per-site change in GPP under SAI relative to SSP2-4.5"></div>
+      <p class="caption"><b>The regression-estimated impact of changes in total light, diffuse light, and the net effect under stratospheric aerosol injection</b> relative to climate change as simulated by CESM2 (G6-1.5K-SAI vs SSP2-4.5, 2065–2084). Bars are point estimates and lines 95% confidence intervals (regression fit days and CESM years resampled). (Manuscript Fig. 5.)</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="sink">
+  <div class="wrap">
+    <div class="step">7 · Why a few percent matters</div>
+    <h2>Small GPP changes can move the land carbon sink a lot</h2>
+    <div class="prose">
+      <p>While these increases seem modest, small changes in GPP (propagated over the entire globe) can lead to large increases in the land carbon sink because the land sink (NEE) is only a small fraction of two large fluxes, photosynthesis and ecosystem respiration (Mercado et al., 2009). In Mercado et al. (2009), an increase in the land carbon sink by 24% was driven by a 1% increase in GPP. This suggests that the modest GPP increase projected under SAI (about +2%), if it held globally, could substantially increase the land carbon sink. However, this enhancement may weaken over time as respiration from the enlarged vegetation and soil carbon pools catches up with the increased photosynthetic uptake.</p>
+    </div>
+    <div class="figure">
+      <div id="chart-merc" class="chart short" role="img" aria-label="GPP change per 0.01 increase in diffuse fraction for Mercado et al. and our sites"></div>
+      <p class="caption"><b>The normalized change in GPP per 0.01 increase of diffuse fraction</b> for Mercado et al. (2009) 1980 and 1999, and our regression at each site. For Mercado et al. this is expressed as a change in global GPP, with a baseline GPP of 123 PgC/yr (Beer et al., 2010). For our regression, it is the diffuse-fraction effect on GPP divided by the mean difference in diffuse fraction between smoke time steps and their matched clear-sky references. Error bars are the 95% confidence intervals for our sites, and the range of the Figure S10 color classes for Mercado et al. (2009). (Manuscript Fig. 6b.)</p>
+    </div>
+    <h3>Where the evidence now sits</h3>
+    <div class="prose">
+      <p>We use wildfire smoke as a natural analog for SAI, demonstrating that its radiative effects are similar to those of sulfate aerosols, resulting in an increase of GPP. Our analysis suggests radiative effects from SAI would range from neutral to slightly positive, with potentially large increases in the land carbon sink. Correcting limitations in previous studies aligns both modeling and observational evidence.</p>
+    </div>
+    <div class="figure">
+      <div id="chart-recon" class="chart short" role="img" aria-label="Before and after estimates for Gu and Proctor"></div>
+      <p class="caption"><b>Before and after the corrections.</b> Left: Gu et al.'s model at Harvard Forest, as published and after each correction, next to our regression. Right: Proctor et al.'s maize insolation effect as published, area-weighted, and area-weighted with southern Africa excluded (log points × 100, with 95% confidence intervals).</p>
+    </div>
+    <div class="prose">
+      <p>Multiple lines of evidence from wildfire smoke, volcanic eruptions, air pollution, and numerical modeling now broadly converge on the conclusion that aerosols similar to those of SAI would tend to have a positive radiative effect on plant photosynthesis.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="caveats">
+  <div class="wrap">
+    <div class="step">8 · Data and code</div>
+    <h2>Data and code</h2>
+    <div class="prose">
+      <p>All the processed data and code to replicate the findings here are available at <a href="https://github.com/bjc204/SAI_analogs">github.com/bjc204/SAI_analogs</a>. Eddy covariance data are from the <a href="https://ameriflux.lbl.gov">AmeriFlux data portal</a>; aerosol data from <a href="https://aeronet.gsfc.nasa.gov">NASA AERONET</a>; smoke polygons from <a href="https://satepsanone.nesdis.noaa.gov/pub/FIRE/web/HMS/">NOAA HMS</a>; canopy greenness from the <a href="https://phenocam.nau.edu">PhenoCam Network</a>; the Proctor et al. (2018) replication data from <a href="https://doi.org/10.5281/zenodo.1313800">Zenodo</a>; and CESM2-WACCM6 simulations from <a href="https://zenodo.org/records/17613419">Lee et al. (2026)</a>.</p>
+      <h3>References</h3>
+      <ol class="refs">
+        <li>Beer, C. et al. Terrestrial gross carbon dioxide uptake: global distribution and covariation with climate. <i>Science</i> 329, 834–838 (2010). <a href="https://doi.org/10.1126/science.1184984">doi</a></li>
+        <li>Cirino, G. G. et al. The effect of atmospheric aerosol particles and clouds on net ecosystem exchange in the Amazon. <i>Atmos. Chem. Phys.</i> 14, 6523–6543 (2014). <a href="https://doi.org/10.5194/acp-14-6523-2014">doi</a></li>
+        <li>Clark, B. et al. Optimal climate intervention scenarios for crop production vary by nation. <i>Nat. Food</i> 4, 902–911 (2023). <a href="https://doi.org/10.1038/s43016-023-00853-3">doi</a></li>
+        <li>Emde, C. et al. The libRadtran software package for radiative transfer calculations (version 2.0.1). <i>Geosci. Model Dev.</i> 9, 1647–1672 (2016). <a href="https://doi.org/10.5194/gmd-9-1647-2016">doi</a></li>
+        <li>Fan, Y. et al. Solar geoengineering can alleviate climate change pressures on crop yields. <i>Nat. Food</i> 2, 373–381 (2021). <a href="https://doi.org/10.1038/s43016-021-00278-w">doi</a></li>
+        <li>Gu, L. et al. Response of a deciduous forest to the Mount Pinatubo eruption: enhanced photosynthesis. <i>Science</i> 299, 2035–2038 (2003). <a href="https://doi.org/10.1126/science.1078366">doi</a></li>
+        <li>Hemes, K. S., Verfaillie, J. &amp; Baldocchi, D. D. Wildfire-smoke aerosols lead to increased light use efficiency among agricultural and restored wetland land uses in California's Central Valley. <i>J. Geophys. Res. Biogeosci.</i> 125, e2019JG005380 (2020). <a href="https://doi.org/10.1029/2019JG005380">doi</a></li>
+        <li>Ibebuchi, C. C. Revisiting the 1992 severe drought episode in South Africa: the role of El Niño in the anomalies of atmospheric circulation types in Africa south of the equator. <i>Theor. Appl. Climatol.</i> 146, 723–740 (2021). <a href="https://doi.org/10.1007/s00704-021-03741-7">doi</a></li>
+        <li>Jägermeyr, J. et al. Climate impacts on global agriculture emerge earlier in new generation of climate and crop models. <i>Nat. Food</i> 2, 873–885 (2021). <a href="https://doi.org/10.1038/s43016-021-00400-y">doi</a></li>
+        <li>Lee, W. R. et al. G6-1.5K-SAI and G6sulfur: changes in impacts and uncertainty depending on stratospheric aerosol injection strategy in the Geoengineering Model Intercomparison Project. <i>Atmos. Chem. Phys.</i> 26, 7463–7483 (2026). <a href="https://doi.org/10.5194/acp-26-7463-2026">doi</a></li>
+        <li>Mercado, L. M. et al. Impact of changes in diffuse radiation on the global land carbon sink. <i>Nature</i> 458, 1014–1017 (2009). <a href="https://doi.org/10.1038/nature07949">doi</a></li>
+        <li>National Academies of Sciences, Engineering, and Medicine. <i>Reflecting Sunlight: Recommendations for Solar Geoengineering Research and Research Governance</i> (2021). <a href="https://doi.org/10.17226/25762">doi</a></li>
+        <li>Proctor, J., Hsiang, S., Burney, J., Burke, M. &amp; Schlenker, W. Estimating global agricultural effects of geoengineering using volcanic eruptions. <i>Nature</i> 560, 480–483 (2018). <a href="https://doi.org/10.1038/s41586-018-0417-3">doi</a></li>
+        <li>Xia, L., Robock, A., Tilmes, S. &amp; Neely, R. R. III. Stratospheric sulfate geoengineering could enhance the terrestrial photosynthesis rate. <i>Atmos. Chem. Phys.</i> 16, 1479–1489 (2016). <a href="https://doi.org/10.5194/acp-16-1479-2016">doi</a></li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">Draft manuscript in preparation for <i>Nature</i>. Figures on this page are drawn from the processed results in the project repository.</div>
+</footer>
+
+<script>
+const D = {"hms":[[2006,16.8],[2007,26.0],[2008,24.0],[2009,16.0],[2010,16.6],[2011,32.4],[2012,51.2],[2013,37.0],[2014,23.7],[2015,32.5],[2016,25.3],[2017,41.4],[2018,42.9],[2019,33.0],[2020,50.7],[2021,88.6],[2022,104.9],[2023,133.3],[2024,113.9],[2025,87.8],[2026,88.4]],"bars":[{"site":"US-Bi2","n":233,"c":"light","v":-3.0,"lo":-6.05,"hi":-0.81},{"site":"US-Bi2","n":233,"c":"diffuse","v":4.64,"lo":0.34,"hi":9.12},{"site":"US-Bi2","n":233,"c":"vpd","v":2.62,"lo":-3.35,"hi":9.11},{"site":"US-Bi2","n":233,"c":"ta","v":-0.57,"lo":-7.73,"hi":6.52},{"site":"US-Bi2","n":233,"c":"swc","v":0.92,"lo":0.42,"hi":1.55},{"site":"US-Bi2","n":233,"c":"radiation","v":1.65,"lo":-1.75,"hi":4.84},{"site":"US-Bi2","n":233,"c":"total","v":4.63,"lo":0.69,"hi":9.0},{"site":"US-Ne1","n":162,"c":"light","v":-6.85,"lo":-9.81,"hi":-4.46},{"site":"US-Ne1","n":162,"c":"diffuse","v":15.6,"lo":10.2,"hi":21.86},{"site":"US-Ne1","n":162,"c":"vpd","v":4.79,"lo":2.27,"hi":7.4},{"site":"US-Ne1","n":162,"c":"ta","v":4.92,"lo":2.01,"hi":8.42},{"site":"US-Ne1","n":162,"c":"swc","v":-0.39,"lo":-0.95,"hi":0.02},{"site":"US-Ne1","n":162,"c":"radiation","v":8.75,"lo":4.82,"hi":13.4},{"site":"US-Ne1","n":162,"c":"total","v":18.08,"lo":12.71,"hi":24.9},{"site":"US-Ne2","n":91,"c":"light","v":-9.65,"lo":-14.55,"hi":-5.93},{"site":"US-Ne2","n":91,"c":"diffuse","v":17.88,"lo":11.07,"hi":26.03},{"site":"US-Ne2","n":91,"c":"vpd","v":6.17,"lo":2.71,"hi":10.24},{"site":"US-Ne2","n":91,"c":"ta","v":4.98,"lo":1.58,"hi":8.84},{"site":"US-Ne2","n":91,"c":"swc","v":-0.5,"lo":-3.12,"hi":2.43},{"site":"US-Ne2","n":91,"c":"radiation","v":8.23,"lo":3.46,"hi":13.4},{"site":"US-Ne2","n":91,"c":"total","v":18.88,"lo":12.43,"hi":26.35},{"site":"US-Ne3","n":122,"c":"light","v":-6.84,"lo":-10.25,"hi":-3.91},{"site":"US-Ne3","n":122,"c":"diffuse","v":11.73,"lo":5.14,"hi":19.05},{"site":"US-Ne3","n":122,"c":"vpd","v":4.5,"lo":1.31,"hi":7.69},{"site":"US-Ne3","n":122,"c":"ta","v":3.09,"lo":-0.64,"hi":6.98},{"site":"US-Ne3","n":122,"c":"swc","v":-1.4,"lo":-3.17,"hi":0.25},{"site":"US-Ne3","n":122,"c":"radiation","v":4.89,"lo":-0.3,"hi":10.13},{"site":"US-Ne3","n":122,"c":"total","v":11.08,"lo":4.29,"hi":17.79},{"site":"US-xUN","n":58,"c":"light","v":-7.76,"lo":-12.72,"hi":-4.55},{"site":"US-xUN","n":58,"c":"diffuse","v":16.72,"lo":10.52,"hi":25.01},{"site":"US-xUN","n":58,"c":"vpd","v":12.62,"lo":7.74,"hi":19.46},{"site":"US-xUN","n":58,"c":"ta","v":-2.99,"lo":-5.41,"hi":-1.28},{"site":"US-xUN","n":58,"c":"swc","v":-0.28,"lo":-0.84,"hi":0.1},{"site":"US-xUN","n":58,"c":"radiation","v":8.96,"lo":4.08,"hi":14.53},{"site":"US-xUN","n":58,"c":"total","v":18.31,"lo":11.04,"hi":26.63},{"site":"US-UMB","n":68,"c":"light","v":-1.54,"lo":-3.1,"hi":-0.15},{"site":"US-UMB","n":68,"c":"diffuse","v":4.93,"lo":1.6,"hi":8.59},{"site":"US-UMB","n":68,"c":"vpd","v":-2.92,"lo":-5.84,"hi":-0.74},{"site":"US-UMB","n":68,"c":"ta","v":0.7,"lo":-0.12,"hi":1.95},{"site":"US-UMB","n":68,"c":"swc","v":0.34,"lo":-0.67,"hi":1.62},{"site":"US-UMB","n":68,"c":"radiation","v":3.39,"lo":1.2,"hi":5.82},{"site":"US-UMB","n":68,"c":"total","v":1.51,"lo":-2.73,"hi":5.34},{"site":"US-MMS","n":33,"c":"light","v":-3.23,"lo":-5.14,"hi":-1.64},{"site":"US-MMS","n":33,"c":"diffuse","v":7.75,"lo":4.58,"hi":11.42},{"site":"US-MMS","n":33,"c":"vpd","v":3.49,"lo":-2.47,"hi":10.35},{"site":"US-MMS","n":33,"c":"ta","v":10.12,"lo":5.24,"hi":14.13},{"site":"US-MMS","n":33,"c":"swc","v":-0.49,"lo":-0.96,"hi":-0.15},{"site":"US-MMS","n":33,"c":"radiation","v":4.51,"lo":2.08,"hi":7.32},{"site":"US-MMS","n":33,"c":"total","v":17.63,"lo":12.07,"hi":22.91},{"site":"US-Ha1","n":46,"c":"light","v":-2.52,"lo":-4.9,"hi":-0.82},{"site":"US-Ha1","n":46,"c":"diffuse","v":8.88,"lo":4.58,"hi":14.09},{"site":"US-Ha1","n":46,"c":"vpd","v":0.33,"lo":-3.84,"hi":4.03},{"site":"US-Ha1","n":46,"c":"ta","v":0.66,"lo":-2.77,"hi":4.02},{"site":"US-Ha1","n":46,"c":"swc","v":0.08,"lo":-0.22,"hi":0.47},{"site":"US-Ha1","n":46,"c":"radiation","v":6.36,"lo":3.06,"hi":9.96},{"site":"US-Ha1","n":46,"c":"total","v":7.42,"lo":2.58,"hi":12.53}],"light":{"smoke":[[0.0,0.0],[0.33,0.0174],[0.84,0.0428],[1.7,0.0832],[2.58,0.1211],[3.46,0.1569],[5.26,0.2224],[7.09,0.2807],[10.77,0.3794],[14.44,0.4588],[18.04,0.5232],[23.26,0.5982],[28.2,0.6542],[34.34,0.708]],"smoke_q1":[[0.0,0.0],[0.32,0.0174],[0.8,0.0426],[1.6,0.0828],[2.43,0.1208],[3.26,0.1565],[4.96,0.2222],[6.69,0.2809],[10.19,0.3805],[13.69,0.461],[17.15,0.5263],[22.19,0.6026],[26.99,0.6593],[33.02,0.7137]],"smoke_q2":[[0.0,0.0],[0.33,0.0174],[0.83,0.0427],[1.67,0.083],[2.52,0.1209],[3.39,0.1567],[5.15,0.2222],[6.94,0.2807],[10.56,0.3797],[14.17,0.4595],[17.73,0.5243],[22.88,0.5999],[27.81,0.6561],[33.9,0.7103]],"smoke_q4":[[0.0,0.0],[0.35,0.0174],[0.88,0.0427],[1.78,0.0829],[2.69,0.1207],[3.62,0.1563],[5.5,0.2215],[7.41,0.2795],[11.24,0.3776],[15.05,0.4564],[18.78,0.5203],[24.15,0.595],[29.24,0.6507],[35.51,0.7045]],"smoke_q5":[[0.0,0.0],[0.35,0.0174],[0.89,0.0429],[1.8,0.0832],[2.72,0.1211],[3.66,0.1568],[5.55,0.222],[7.48,0.2799],[11.35,0.3778],[15.18,0.4562],[18.92,0.5198],[24.3,0.5939],[29.39,0.6493],[35.64,0.7028]],"sulfate":[[0.0,0.0],[0.13,0.0183],[0.33,0.0449],[0.67,0.0873],[1.02,0.1274],[1.39,0.1653],[2.14,0.235],[2.92,0.2973],[4.55,0.4029],[6.23,0.4876],[7.95,0.5557],[10.52,0.6339],[13.07,0.6906],[16.37,0.7429]],"sulfate_r0.2":[[0.0,0.0],[0.19,0.0188],[0.47,0.0461],[0.95,0.0894],[1.44,0.1301],[1.94,0.1683],[2.96,0.2381],[4.01,0.2997],[6.15,0.4031],[8.32,0.4849],[10.48,0.5502],[13.66,0.6249],[16.7,0.6793],[20.55,0.7301]],"sulfate_r0.3":[[0.0,0.0],[0.14,0.0186],[0.35,0.0456],[0.72,0.0886],[1.09,0.1291],[1.48,0.1672],[2.27,0.2373],[3.09,0.2996],[4.79,0.4049],[6.53,0.4889],[8.31,0.5562],[10.97,0.6332],[13.59,0.689],[16.97,0.7406]],"sulfate_r0.5":[[0.0,0.0],[0.13,0.018],[0.33,0.0443],[0.68,0.0863],[1.04,0.126],[1.42,0.1636],[2.19,0.2329],[3.0,0.2949],[4.67,0.4003],[6.4,0.4851],[8.17,0.5534],[10.82,0.6321],[13.42,0.6893],[16.8,0.7421]],"sulfate_r0.6":[[0.0,0.0],[0.13,0.0178],[0.34,0.0438],[0.71,0.0855],[1.1,0.125],[1.49,0.1624],[2.31,0.2312],[3.16,0.293],[4.93,0.398],[6.74,0.4826],[8.59,0.5509],[11.36,0.6297],[14.06,0.6871],[17.55,0.7404]]},"pts":[[0.41,0.066],[2.71,0.043],[4.59,0.048],[1.81,0.04],[2.85,0.045],[3.69,0.1],[14.5,0.199],[8.31,0.176],[4.91,0.158],[4.72,0.173],[-2.46,0.123],[-3.19,0.088],[-5.25,0.064],[0.74,0.038],[1.35,0.043],[1.68,0.011],[0.85,0.133],[25.23,0.443],[11.43,0.049],[-2.07,0.019],[-1.36,0.029],[-2.58,0.041],[-0.14,0.011],[6.12,0.071],[-0.91,0.037],[-1.75,0.042],[-3.25,0.037],[0.22,0.148],[-2.62,0.114],[0.24,0.069],[0.58,0.069],[-0.69,0.045],[-2.8,0.054],[-1.32,0.06],[3.56,0.085],[2.48,0.063],[1.35,0.058],[0.97,0.065],[13.43,0.183],[10.13,0.167],[9.55,0.174],[8.55,0.173],[8.13,0.158],[8.93,0.151],[6.25,0.134],[16.95,0.265],[42.7,0.213],[14.41,0.252],[2.39,0.054],[26.94,0.348],[28.58,0.368],[21.61,0.371],[23.44,0.392],[24.44,0.396],[22.36,0.386],[23.64,0.383],[27.53,0.407],[27.87,0.41],[8.19,0.138],[3.16,0.101],[4.58,0.107],[-1.08,0.016],[-3.98,-0.019],[-4.54,-0.013],[-4.77,-0.021],[-2.69,0.001],[-2.5,0.01],[-1.16,0.044],[-1.14,0.05],[-2.23,0.04],[-2.88,0.038],[-2.93,0.041],[-2.33,0.036],[-0.66,0.034],[2.91,0.053],[10.57,0.063],[-4.74,-0.028],[-5.12,-0.008],[-3.57,0.03],[-4.03,0.041],[-4.32,0.024],[-1.4,0.078],[3.57,0.084],[9.61,0.277],[6.91,0.238],[5.6,0.225],[7.15,0.222],[3.32,0.181],[42.83,0.45],[8.32,0.192],[6.01,0.168],[4.71,0.155],[2.67,0.134],[7.82,0.225],[7.2,0.225],[6.76,0.228],[7.65,0.24],[8.69,0.271],[8.96,0.287],[10.74,0.311],[9.6,0.282],[9.15,0.276],[18.83,0.296],[-3.97,-0.028],[1.09,0.062],[0.94,0.059],[4.67,0.117],[3.84,0.108],[2.77,0.099],[2.73,0.1],[2.19,0.09],[2.38,0.094],[3.3,0.097],[3.57,0.1],[3.1,0.099],[-2.49,0.025],[-1.0,0.018],[-0.31,0.009],[2.74,0.011],[-0.46,0.007],[-1.46,0.006],[-1.59,0.007],[-0.74,0.01],[-0.28,0.01],[6.47,0.019],[14.23,0.032],[-1.94,0.007],[-2.85,0.005],[-1.5,0.009],[-1.4,0.008],[-0.72,0.007],[-0.46,0.005],[-1.25,0.003],[-1.64,0.0],[-1.46,0.003],[-1.58,0.013],[-1.33,0.034],[17.55,0.189],[11.92,0.09],[6.45,0.036],[-0.56,0.033],[-1.65,0.017],[5.25,-0.018],[2.04,-0.013],[-2.95,-0.018],[-2.66,-0.02],[-2.41,-0.024],[-1.94,-0.014],[11.17,0.284],[12.71,0.297],[16.3,0.208],[10.68,0.161],[6.17,0.14],[3.55,0.119],[2.67,0.104],[2.71,0.108],[1.18,0.093],[1.12,0.087],[1.85,0.099],[4.08,0.132],[7.47,0.154],[8.21,0.15],[12.76,0.15],[15.23,0.174],[10.1,0.147],[2.7,0.092],[35.38,0.407],[29.32,0.397],[24.92,0.384],[19.58,0.362],[18.42,0.353],[17.42,0.346],[18.28,0.355],[14.6,0.271],[11.25,0.247],[10.4,0.227],[7.9,0.191],[6.67,0.165],[6.25,0.144],[58.25,0.614],[-1.91,0.058],[-2.95,0.034],[-2.78,0.037],[-1.21,0.074],[1.11,0.081],[0.07,0.076],[1.45,0.097],[4.05,0.109],[0.02,0.048],[-0.96,0.035],[-1.94,0.023],[-1.39,0.034],[-1.97,0.026],[-1.78,0.008],[-2.44,0.037],[-1.15,0.041],[0.06,0.062],[-0.42,0.052],[-0.49,0.051],[-0.86,0.047],[-2.18,0.035],[-3.33,0.037],[0.19,0.052],[-1.14,0.051],[3.56,0.089],[3.06,0.084],[1.16,0.061],[-0.09,0.043],[-0.55,0.044],[-0.93,0.032],[-0.39,0.042],[-0.29,0.061],[1.77,0.066],[1.49,0.079],[2.56,0.124],[5.02,0.131],[12.42,0.146],[-1.17,-0.006],[21.8,0.35],[17.87,0.34],[18.14,0.336],[17.15,0.316],[0.28,0.043],[15.42,0.137],[6.95,0.111],[0.98,0.092],[-1.04,0.079],[-1.03,0.072],[-1.38,0.062],[-1.08,0.055],[-0.77,0.105],[1.89,0.045],[4.31,0.077],[9.96,0.077],[-3.16,0.08],[-2.32,0.033],[-2.74,0.026],[11.23,0.085],[18.34,0.279],[5.76,0.199],[-2.04,0.083],[9.87,0.033],[-3.98,0.052],[1.39,0.152],[14.12,0.126],[-1.61,0.088],[-0.92,0.081],[2.02,0.09],[7.55,0.124],[-3.95,-0.005],[5.39,0.093],[13.72,0.298],[7.72,0.282],[7.97,0.303],[6.81,0.231],[13.36,0.265],[5.78,0.212],[7.64,0.253],[6.57,0.191],[21.28,0.433],[27.69,0.482],[26.26,0.239],[6.55,0.265],[4.38,-0.011],[-4.05,0.006],[-3.83,-0.003],[6.14,0.008],[9.44,0.084],[-1.41,0.075],[8.58,0.212],[16.87,0.205],[-1.15,0.012],[2.59,0.05],[25.02,0.442],[3.5,0.03],[-0.23,0.004],[-3.1,-0.041],[10.3,0.194],[15.34,0.319],[11.2,0.167],[7.16,0.144],[4.7,0.107],[11.53,0.172],[6.03,0.115],[3.56,0.068],[5.74,0.053],[8.39,0.178],[5.84,0.226],[6.59,0.18],[8.17,0.256],[5.88,0.182],[3.32,0.199],[15.69,0.191],[-4.44,0.001],[12.85,0.055],[1.5,0.084],[3.49,0.147],[10.24,0.002],[1.24,0.065],[10.86,0.096],[3.74,0.065],[14.32,0.246],[9.53,-0.007],[19.93,0.363],[19.82,0.42],[23.48,0.4],[7.09,0.02],[11.09,0.048],[-3.89,0.025],[12.33,0.078],[-2.51,0.065],[-5.28,0.046],[13.52,0.082],[12.18,0.242],[14.81,0.284],[1.94,0.132],[7.95,0.283],[1.17,0.159],[-4.37,0.072],[-6.06,0.035],[-6.51,0.058],[7.85,0.103],[3.2,0.204],[7.53,0.286],[3.65,0.248],[3.95,0.251],[4.71,0.301],[-0.96,0.122],[0.08,0.173],[12.88,0.355],[13.51,0.404],[10.55,0.373],[16.26,0.432],[7.43,0.217],[4.94,0.202],[5.72,0.185],[10.05,0.293],[5.79,0.178],[4.33,0.177],[3.47,0.179],[2.9,0.172],[1.33,0.11],[1.25,0.114],[3.25,0.143],[8.36,0.03],[-3.65,-0.015],[15.55,0.186],[3.67,0.134],[9.15,-0.006],[30.03,0.399],[12.51,0.313],[0.11,0.106],[4.83,0.22],[4.48,0.207],[5.63,0.238],[5.1,0.212],[3.66,0.15],[1.45,0.108],[1.47,0.1],[0.66,0.076],[5.69,0.188],[8.7,0.185],[7.38,0.23],[13.19,0.409],[14.48,0.35],[15.75,0.368],[19.87,0.416],[-0.65,0.093],[2.8,0.158],[8.04,0.243],[7.35,0.085],[-4.28,0.056],[-2.0,0.008],[-1.52,0.016],[3.57,0.094],[4.51,0.148],[5.48,-0.013],[1.69,0.242],[-2.59,0.014],[-2.28,-0.028],[-4.23,0.002],[-4.36,-0.0],[1.5,0.073],[-1.35,0.052],[-1.18,0.103],[0.08,0.106],[7.15,0.138],[7.02,0.163],[8.57,0.218],[10.35,0.282],[8.62,0.214],[8.38,0.19],[7.35,0.176],[5.96,0.192],[29.5,0.261],[9.27,0.063],[-4.48,0.078],[-5.43,0.023],[-2.3,0.034],[17.6,0.253],[6.03,0.109],[-0.47,0.082],[2.92,0.086],[7.88,0.024],[-5.63,0.027],[0.75,0.106],[14.6,0.105],[-3.17,0.059],[-2.03,0.06],[2.72,0.093],[8.33,0.105],[-4.76,-0.004],[14.08,0.258],[8.42,0.244],[11.03,0.272],[11.37,0.276],[13.51,0.227],[7.18,0.182],[10.31,0.226],[11.72,0.239],[25.13,0.464],[32.99,0.503],[9.9,0.186],[4.33,0.186],[3.85,0.192],[3.31,0.191],[7.68,0.122],[0.46,0.096],[1.11,0.135],[4.57,0.187],[12.45,0.2],[8.35,0.057],[-1.62,-0.003],[0.75,0.02],[-3.22,0.015],[10.89,0.074],[-1.62,0.055],[-3.37,0.016],[12.06,0.079],[10.62,0.237],[4.75,0.145],[7.1,0.246],[3.78,0.292],[-0.08,0.191],[13.18,0.232],[9.36,0.19],[10.35,0.299],[9.89,0.181],[4.66,0.179],[2.82,0.182],[2.93,0.176],[17.92,0.135],[0.5,0.111],[1.1,0.116],[11.61,0.034],[0.4,-0.017],[-3.54,-0.011],[-3.29,0.004],[-2.29,-0.012],[18.25,0.192],[11.61,0.284],[9.09,0.308],[11.39,-0.004],[13.91,0.327],[10.07,0.344],[14.75,0.38],[17.94,0.36],[26.52,0.381],[36.17,0.353],[5.96,0.104],[-1.41,0.08],[10.64,0.219],[4.21,0.202],[3.95,0.215],[2.65,0.188],[10.04,0.134],[8.0,0.147],[0.61,0.099],[-0.64,0.075],[-2.24,0.048],[10.52,0.139],[15.7,0.268],[12.44,0.304],[3.94,0.182],[6.89,0.175],[4.58,0.209],[18.98,0.347],[32.26,0.543],[-2.77,0.095],[10.79,0.043],[-3.51,0.041],[-0.17,0.12],[-1.37,-0.004],[-1.31,0.078],[-2.32,0.067],[1.75,0.111],[0.88,0.082],[-4.74,-0.009],[35.81,0.314],[43.24,0.624],[30.4,0.62],[6.42,0.268],[9.52,0.305],[9.26,0.311],[11.88,0.26],[12.07,0.25],[5.12,0.198],[8.25,0.25],[9.92,0.271],[18.29,0.482],[11.76,0.202],[5.65,0.198],[6.01,0.201],[6.16,0.207],[8.86,0.123],[1.37,0.091],[3.19,0.135],[7.33,0.202],[1.16,0.099],[9.74,0.068],[0.89,0.01],[-9.83,0.02],[0.65,0.025],[9.55,0.061],[10.27,0.087],[-4.63,0.046],[-5.38,0.006],[10.61,0.09],[-3.16,0.064],[6.94,0.245],[4.18,0.254],[18.94,0.427],[8.76,0.218],[5.2,0.193],[6.68,0.185],[10.05,0.283],[7.57,0.177],[4.28,0.166],[0.24,0.103],[9.65,0.032],[-1.04,-0.017],[-3.51,-0.02],[16.23,0.187],[5.27,0.132],[10.54,-0.004],[1.52,0.09],[-1.64,0.069],[6.42,0.203],[2.89,0.196],[3.07,0.213],[0.07,0.144],[6.87,0.073],[12.3,-0.132],[3.15,0.126],[-0.92,0.095],[-2.14,0.071],[-5.87,0.003],[7.81,0.079],[20.69,0.3],[2.87,0.176],[3.35,0.185],[-3.25,-0.01],[-5.46,0.246],[6.93,0.254],[9.67,0.036],[23.56,0.331],[-2.76,0.096],[0.59,0.025],[17.68,0.455],[17.39,0.421],[15.75,0.411],[16.22,0.405],[20.4,0.427],[-1.23,0.081],[1.35,0.143],[3.4,0.189],[8.77,0.246],[13.68,0.313],[7.42,0.25],[13.32,0.128],[2.47,0.087],[-0.35,0.046],[13.91,0.083],[24.1,0.459],[20.19,0.193],[-3.64,-0.023],[-5.26,-0.016],[-3.88,-0.004],[-2.11,0.078],[-2.09,0.053],[-1.6,0.088],[0.41,0.104],[9.66,0.145],[14.5,0.19],[1.36,0.161],[5.49,0.212],[6.59,0.244],[6.5,0.183],[2.36,0.181],[2.18,0.151],[2.52,0.15],[4.71,0.134],[13.0,0.17],[9.41,0.303],[9.99,0.302],[9.02,0.236],[5.5,0.222],[5.95,0.194],[-5.68,0.033],[6.89,0.294],[23.53,0.561],[27.22,0.574],[4.95,0.234],[2.78,0.166],[4.93,0.151],[4.53,0.134],[-2.74,-0.039],[-4.67,-0.061],[-5.97,-0.075],[-6.93,-0.098],[-6.16,-0.109],[-5.44,-0.074],[-4.92,-0.017],[-0.67,-0.004],[4.36,0.004],[10.08,0.033],[-2.89,-0.001],[15.18,0.318],[15.69,0.295],[10.87,0.205],[6.41,0.211],[4.22,0.181],[2.75,0.165],[0.66,0.132],[2.64,0.182],[8.8,0.202],[7.44,0.234],[9.84,0.241],[-2.59,0.043],[2.36,0.045],[-1.66,0.007],[-1.27,0.004],[-1.76,0.005],[1.37,0.015],[6.06,0.311],[-3.24,-0.028],[2.8,0.003],[9.77,0.014],[0.5,0.07],[1.06,0.076],[15.97,0.205],[10.75,0.178],[6.74,0.165],[3.86,0.154],[2.92,0.132],[2.47,0.124],[2.58,0.133],[5.54,0.18],[3.96,0.176],[1.88,0.153],[1.65,0.156],[2.7,0.139],[2.52,0.109],[14.77,0.131],[-12.38,-0.032],[-6.11,-0.034],[-4.89,0.126],[-4.78,0.139],[7.14,0.132],[20.7,0.142],[5.31,0.046],[-6.64,0.001],[-6.31,0.063],[6.02,0.331],[1.67,0.081],[5.84,0.053],[14.39,0.172],[18.57,0.248],[5.22,0.149],[8.59,0.184],[5.75,0.116],[8.41,0.148],[-0.06,0.068],[-4.62,0.054],[15.34,0.134],[6.9,0.233],[6.07,0.237],[7.56,0.255],[6.82,0.27],[3.59,0.224],[11.39,0.282],[6.5,0.214],[5.94,0.26],[1.54,0.263],[18.04,0.353],[18.8,0.4],[-18.22,0.028],[-5.3,0.107],[-6.2,0.139],[-0.7,0.083],[10.71,0.306],[14.43,0.236],[16.48,0.345],[16.11,0.318],[10.26,0.211],[3.07,0.149],[15.32,0.291],[14.92,0.276],[8.58,0.222],[9.93,0.255],[7.21,0.251],[13.02,0.154],[6.26,0.057],[3.19,0.059],[4.62,0.098],[1.83,0.072],[4.54,0.133],[-0.03,0.101],[40.65,0.519],[-1.34,0.051],[2.59,0.08],[4.55,0.113],[1.42,0.084],[0.78,0.048],[2.89,0.124],[9.34,0.048],[1.58,0.05],[-0.16,0.104],[0.21,0.06],[16.34,0.189],[5.58,0.107],[12.38,0.29],[11.17,0.304],[12.52,0.277],[-1.43,0.034],[4.05,0.067],[1.81,0.082],[16.16,0.255],[0.87,0.092],[7.58,0.225],[11.92,0.292],[-15.2,0.0],[-11.81,-0.007],[3.32,0.137],[-3.11,0.155],[30.39,0.348],[13.64,0.161],[28.33,0.429],[15.92,0.401],[6.63,0.312],[14.35,0.147],[0.46,0.115],[3.03,0.117],[3.14,0.098],[2.4,0.117]],"curves":{"forest_smoke":[[0.0,0.0,0.0,0.0],[0.02,0.91,0.64,1.3],[0.05,2.2,1.53,3.17],[0.1,4.18,2.85,6.05],[0.15,5.94,3.98,8.67],[0.2,7.52,4.94,11.03],[0.3,10.14,6.38,15.1],[0.4,12.15,7.3,18.38],[0.6,14.73,7.9,23.1],[0.8,15.84,7.33,25.91],[1.0,15.91,5.99,27.34],[1.3,14.71,3.16,27.68],[1.6,12.49,-0.16,26.54],[2.0,8.64,-4.75,23.6]],"forest_sulfate":[[0.0,0.0,0.0,0.0],[0.02,1.12,0.75,1.81],[0.05,2.75,1.81,4.46],[0.1,5.31,3.47,8.69],[0.15,7.69,4.96,12.64],[0.2,9.89,6.32,16.33],[0.3,13.78,8.64,22.96],[0.4,17.09,10.5,28.7],[0.6,22.22,13.08,37.84],[0.8,25.73,14.49,44.46],[1.0,28.02,15.03,49.1],[1.3,29.78,14.74,53.35],[1.6,30.06,13.62,55.22],[2.0,28.95,11.42,55.29]],"maize_smoke":[[0.0,0.0,0.0,0.0],[0.02,1.22,0.57,1.71],[0.05,2.94,1.38,4.11],[0.1,5.52,2.57,7.74],[0.15,7.76,3.61,10.91],[0.2,9.7,4.49,13.67],[0.3,12.75,5.85,18.08],[0.4,14.83,6.75,21.19],[0.6,16.77,7.46,24.38],[0.8,16.46,7.1,24.53],[1.0,14.64,6.03,22.59],[1.3,10.09,3.6,17.16],[1.6,4.32,-2.04,9.96],[2.0,-4.21,-10.83,-0.92]],"maize_sulfate":[[0.0,0.0,0.0,0.0],[0.02,1.52,0.75,2.12],[0.05,3.71,1.84,5.18],[0.1,7.11,3.52,9.93],[0.15,10.22,5.06,14.29],[0.2,13.07,6.47,18.28],[0.3,18.03,8.92,25.25],[0.4,22.12,10.93,31.03],[0.6,28.13,13.89,39.61],[0.8,31.84,15.7,45.04],[1.0,33.8,16.63,48.08],[1.3,34.48,16.88,49.52],[1.6,33.32,16.21,48.42],[2.0,30.01,14.46,44.6]]},"obs":[{"site":"US-Bi2","g":"maize","x":0.271,"v":1.65,"lo":-1.75,"hi":4.84},{"site":"US-Ne1","g":"maize","x":0.312,"v":8.75,"lo":4.82,"hi":13.4},{"site":"US-Ne2","g":"maize","x":0.283,"v":8.23,"lo":3.46,"hi":13.4},{"site":"US-Ne3","g":"maize","x":0.319,"v":4.89,"lo":-0.3,"hi":10.13},{"site":"US-xUN","g":"forest","x":0.346,"v":8.96,"lo":4.08,"hi":14.53},{"site":"US-UMB","g":"forest","x":0.382,"v":3.39,"lo":1.2,"hi":5.82},{"site":"US-MMS","g":"forest","x":0.3,"v":4.51,"lo":2.08,"hi":7.32},{"site":"US-Ha1","g":"forest","x":0.31,"v":6.36,"lo":3.06,"hi":9.96}],"pin":[{"year":"1992","aod":0.087,"pl":0.58,"ddf":0.076,"gpp":23.0},{"year":"1993","aod":0.027,"pl":0.17,"ddf":0.025,"gpp":8.0}],"gu_days":{"regression":[5.01,7.71,2.91,1.48,1.11,1.01,1.04,4.02,4.56,0.93,0.47,0.56,-12.38,0.62,1.15,1.84,2.23,1.12,2.75,4.31,-1.65,1.82,2.73,12.16,6.79,11.58,3.85,1.0,1.16,1.32,0.56,1.55,1.03,0.1,1.05,1.84,1.91,7.47,8.11,11.67,5.68,2.53,9.54,15.62,1.85,2.99,2.65,6.22,-1.0,2.07,2.46,2.2,4.65,-0.9,-1.4,1.67,4.91,0.45,1.91,2.14,0.63,-6.34,0.11,0.88,-3.33,0.89,3.47,-5.76,0.97,1.85,1.89,0.14,1.89,2.38,3.73,1.28,1.71],"gu_default":[20.25,44.28,14.48,16.47,35.37,15.65,13.23,17.2,31.7,12.89,15.21,12.79,41.74,9.49,11.73,12.31,14.36,8.01,58.03,45.94,42.56,16.28,24.72,17.52,10.44,18.71,26.02,12.6,15.82,13.62,8.23,17.21,11.66,22.36,15.91,25.94,29.62,20.04,23.14,44.22,24.14,12.87,41.27,62.25,8.39,13.34,15.9,35.08,15.43,15.18,15.99,16.13,39.93,11.75,14.09,24.43,32.16,7.65,23.08,46.27,8.22,21.89,15.28,42.73,45.17,10.22,54.26,38.99,17.95,19.0,14.13,5.44,17.07,27.77,50.02,12.75,15.29],"gu_clear":[10.58,21.91,6.78,8.34,21.69,10.8,8.11,9.43,16.8,9.37,7.79,6.12,20.72,6.1,6.86,6.46,7.19,4.47,32.84,26.27,24.21,10.27,14.22,9.05,5.83,10.24,14.94,6.84,8.4,8.53,4.36,11.7,7.36,11.26,9.39,14.67,17.2,11.82,12.99,24.29,13.64,7.72,22.78,34.51,4.76,7.19,9.02,18.27,7.52,8.92,8.78,9.32,22.37,5.54,7.4,15.78,16.43,3.22,14.82,29.35,5.31,12.13,8.29,27.38,29.63,6.53,30.33,20.76,9.52,10.75,8.35,1.23,10.15,16.46,29.73,8.07,9.11],"gu_partly":[8.21,16.23,5.38,6.07,14.56,8.28,6.39,7.09,12.11,7.54,4.99,3.74,3.92,4.83,5.39,4.86,5.41,3.47,20.03,17.76,13.24,8.12,10.09,6.72,4.56,8.1,11.34,4.81,5.44,6.39,2.87,9.09,5.67,5.92,6.98,9.99,11.57,8.95,9.8,17.38,10.36,6.15,16.82,25.18,3.81,5.57,6.91,12.52,2.96,6.9,6.65,7.03,15.24,2.37,3.1,10.99,9.63,1.7,10.82,18.71,3.87,1.86,4.19,16.62,15.07,4.55,17.58,7.22,5.68,7.42,6.5,-0.15,7.63,11.36,18.87,6.1,6.64],"gu_wx":[4.13,4.3,1.52,1.31,2.27,1.82,1.9,3.84,3.82,1.43,0.89,0.62,-10.18,1.05,1.12,1.13,1.19,0.86,0.65,4.04,0.56,3.3,4.15,8.27,5.58,8.02,3.81,1.1,1.12,1.57,0.69,2.11,1.25,0.44,1.87,1.99,2.33,7.79,6.52,5.46,4.33,2.64,5.23,5.97,1.44,1.94,2.07,2.66,-0.44,1.52,1.55,1.57,1.81,-0.36,-0.28,2.51,0.54,0.25,1.53,0.04,0.66,-5.52,-0.08,-1.23,-6.25,0.88,-1.17,-7.69,1.21,1.66,1.53,-0.23,1.33,1.53,-0.15,1.29,1.27]},"gu_dates":["2016-05-12","2016-05-20","2016-05-25","2016-09-04","2017-08-10","2017-08-24","2017-09-12","2018-05-23","2018-05-25","2018-08-06","2018-08-24","2018-08-26","2019-05-31","2019-07-09","2019-07-10","2019-07-28","2019-07-30","2019-08-02","2020-09-15","2020-09-16","2020-09-17","2020-09-21","2020-09-25","2021-05-19","2021-05-20","2021-05-21","2021-06-21","2021-07-15","2021-07-22","2021-07-27","2021-08-06","2021-08-25","2022-07-12","2022-07-21","2022-09-09","2022-09-10","2022-09-18","2023-05-10","2023-05-11","2023-05-16","2023-05-19","2023-05-22","2023-05-23","2023-05-24","2023-05-29","2023-06-02","2023-06-11","2023-06-12","2023-06-30","2023-07-06","2023-07-11","2023-07-12","2023-07-17","2023-08-20","2023-09-26","2023-09-27","2024-05-26","2024-06-18","2024-07-27","2024-08-02","2024-08-05","2024-08-13","2024-08-14","2024-08-15","2024-08-16","2024-09-13","2025-06-04","2025-06-08","2025-06-11","2025-06-23","2025-07-06","2025-07-24","2025-07-26","2025-08-03","2025-08-04","2025-08-08","2025-08-10"],"gu_sum":{"regression":1.9,"gu_default":23.3,"gu_clear":13.2,"gu_partly":8.8,"gu_wx":1.2},"resid":{"year":[1988,1989,1990,1991,1992,1993,1994,1995,1996],"row":[2.45,1.06,1.98,3.34,-0.84,-3.41,-3.35,-2.01,-1.37],"saf":[7.7,4.12,6.09,-2.75,-40.49,7.43,0.82,13.35,14.05]},"proctor":[{"crop":"maize","ver":"Proctor et al. (2018)","e":"tas","v":6.1,"ci":3.12},{"crop":"maize","ver":"Proctor et al. (2018)","e":"saod","v":-5.48,"ci":1.8},{"crop":"maize","ver":"Proctor et al. (2018)","e":"clt","v":0.11,"ci":0.31},{"crop":"maize","ver":"Proctor et al. (2018)","e":"pr","v":0.16,"ci":0.09},{"crop":"maize","ver":"Proctor et al. (2018)","e":"total","v":0.88,"ci":3.19},{"crop":"maize","ver":"Area-weighted","e":"tas","v":5.05,"ci":4.45},{"crop":"maize","ver":"Area-weighted","e":"saod","v":-3.05,"ci":3.8},{"crop":"maize","ver":"Area-weighted","e":"clt","v":0.01,"ci":0.37},{"crop":"maize","ver":"Area-weighted","e":"pr","v":0.33,"ci":0.16},{"crop":"maize","ver":"Area-weighted","e":"total","v":2.34,"ci":2.47},{"crop":"maize","ver":"Area-weighted, southern Africa excluded","e":"tas","v":4.11,"ci":3.63},{"crop":"maize","ver":"Area-weighted, southern Africa excluded","e":"saod","v":0.05,"ci":3.3},{"crop":"maize","ver":"Area-weighted, southern Africa excluded","e":"clt","v":-0.17,"ci":0.2},{"crop":"maize","ver":"Area-weighted, southern Africa excluded","e":"pr","v":0.29,"ci":0.15},{"crop":"maize","ver":"Area-weighted, southern Africa excluded","e":"total","v":4.28,"ci":2.4},{"crop":"soy","ver":"Proctor et al. (2018)","e":"tas","v":5.74,"ci":2.92},{"crop":"soy","ver":"Proctor et al. (2018)","e":"saod","v":-3.69,"ci":3.9},{"crop":"soy","ver":"Proctor et al. (2018)","e":"clt","v":-0.26,"ci":0.42},{"crop":"soy","ver":"Proctor et al. (2018)","e":"pr","v":-0.03,"ci":0.24},{"crop":"soy","ver":"Proctor et al. (2018)","e":"total","v":1.76,"ci":3.75},{"crop":"soy","ver":"Area-weighted","e":"tas","v":3.62,"ci":2.94},{"crop":"soy","ver":"Area-weighted","e":"saod","v":-1.61,"ci":2.94},{"crop":"soy","ver":"Area-weighted","e":"clt","v":-0.13,"ci":0.84},{"crop":"soy","ver":"Area-weighted","e":"pr","v":-0.1,"ci":0.57},{"crop":"soy","ver":"Area-weighted","e":"total","v":1.79,"ci":3.26},{"crop":"soy","ver":"Area-weighted, southern Africa excluded","e":"tas","v":3.61,"ci":2.93},{"crop":"soy","ver":"Area-weighted, southern Africa excluded","e":"saod","v":-1.52,"ci":2.89},{"crop":"soy","ver":"Area-weighted, southern Africa excluded","e":"clt","v":-0.13,"ci":0.85},{"crop":"soy","ver":"Area-weighted, southern Africa excluded","e":"pr","v":-0.1,"ci":0.57},{"crop":"soy","ver":"Area-weighted, southern Africa excluded","e":"total","v":1.86,"ci":3.25},{"crop":"rice","ver":"Proctor et al. (2018)","e":"tas","v":2.19,"ci":2.44},{"crop":"rice","ver":"Proctor et al. (2018)","e":"saod","v":-2.49,"ci":3.36},{"crop":"rice","ver":"Proctor et al. (2018)","e":"clt","v":0.51,"ci":0.43},{"crop":"rice","ver":"Proctor et al. (2018)","e":"pr","v":-0.13,"ci":0.19},{"crop":"rice","ver":"Proctor et al. (2018)","e":"total","v":0.09,"ci":3.26},{"crop":"rice","ver":"Area-weighted","e":"tas","v":0.2,"ci":1.99},{"crop":"rice","ver":"Area-weighted","e":"saod","v":0.58,"ci":2.0},{"crop":"rice","ver":"Area-weighted","e":"clt","v":-0.02,"ci":0.33},{"crop":"rice","ver":"Area-weighted","e":"pr","v":-0.24,"ci":0.3},{"crop":"rice","ver":"Area-weighted","e":"total","v":0.52,"ci":2.09},{"crop":"rice","ver":"Area-weighted, southern Africa excluded","e":"tas","v":0.19,"ci":2.04},{"crop":"rice","ver":"Area-weighted, southern Africa excluded","e":"saod","v":0.72,"ci":2.06},{"crop":"rice","ver":"Area-weighted, southern Africa excluded","e":"clt","v":-0.02,"ci":0.32},{"crop":"rice","ver":"Area-weighted, southern Africa excluded","e":"pr","v":-0.24,"ci":0.3},{"crop":"rice","ver":"Area-weighted, southern Africa excluded","e":"total","v":0.66,"ci":2.19},{"crop":"wheat","ver":"Proctor et al. (2018)","e":"tas","v":1.36,"ci":3.0},{"crop":"wheat","ver":"Proctor et al. (2018)","e":"saod","v":-2.29,"ci":2.05},{"crop":"wheat","ver":"Proctor et al. (2018)","e":"clt","v":-0.0,"ci":0.29},{"crop":"wheat","ver":"Proctor et al. (2018)","e":"pr","v":-0.0,"ci":0.01},{"crop":"wheat","ver":"Proctor et al. (2018)","e":"total","v":-0.93,"ci":2.95},{"crop":"wheat","ver":"Area-weighted","e":"tas","v":2.02,"ci":2.39},{"crop":"wheat","ver":"Area-weighted","e":"saod","v":-0.48,"ci":3.44},{"crop":"wheat","ver":"Area-weighted","e":"clt","v":-0.23,"ci":0.44},{"crop":"wheat","ver":"Area-weighted","e":"pr","v":-0.02,"ci":0.02},{"crop":"wheat","ver":"Area-weighted","e":"total","v":1.29,"ci":4.03},{"crop":"wheat","ver":"Area-weighted, southern Africa excluded","e":"tas","v":2.04,"ci":2.45},{"crop":"wheat","ver":"Area-weighted, southern Africa excluded","e":"saod","v":-0.59,"ci":3.57},{"crop":"wheat","ver":"Area-weighted, southern Africa excluded","e":"clt","v":-0.24,"ci":0.44},{"crop":"wheat","ver":"Area-weighted, southern Africa excluded","e":"pr","v":-0.02,"ci":0.02},{"crop":"wheat","ver":"Area-weighted, southern Africa excluded","e":"total","v":1.2,"ci":4.19}],"sai":[{"site":"US-Bi2","c":"light","pt":-0.75,"q":[-1.58,null,null,null,0.02]},{"site":"US-Bi2","c":"diffuse","pt":2.66,"q":[0.33,null,null,null,4.53]},{"site":"US-Bi2","c":"radiation","pt":1.91,"q":[-0.43,null,null,null,3.84]},{"site":"US-Ha1","c":"light","pt":0.0,"q":[-1.21,null,null,null,1.05]},{"site":"US-Ha1","c":"diffuse","pt":2.39,"q":[1.55,null,null,null,3.36]},{"site":"US-Ha1","c":"radiation","pt":2.39,"q":[1.51,null,null,null,3.26]},{"site":"US-MMS","c":"light","pt":-1.91,"q":[-2.99,null,null,null,-0.71]},{"site":"US-MMS","c":"diffuse","pt":3.02,"q":[2.28,null,null,null,3.84]},{"site":"US-MMS","c":"radiation","pt":1.11,"q":[0.27,null,null,null,1.81]},{"site":"US-Ne1","c":"light","pt":-3.9,"q":[-5.81,null,null,null,-1.86]},{"site":"US-Ne1","c":"diffuse","pt":4.02,"q":[2.65,null,null,null,5.5]},{"site":"US-Ne1","c":"radiation","pt":0.12,"q":[-1.37,null,null,null,1.67]},{"site":"US-Ne2","c":"light","pt":-4.14,"q":[-6.15,null,null,null,-2.35]},{"site":"US-Ne2","c":"diffuse","pt":5.91,"q":[4.14,null,null,null,7.92]},{"site":"US-Ne2","c":"radiation","pt":1.77,"q":[0.28,null,null,null,3.19]},{"site":"US-Ne3","c":"light","pt":-3.65,"q":[-5.44,null,null,null,-1.94]},{"site":"US-Ne3","c":"diffuse","pt":3.56,"q":[1.97,null,null,null,5.05]},{"site":"US-Ne3","c":"radiation","pt":-0.1,"q":[-1.81,null,null,null,1.21]},{"site":"US-UMB","c":"light","pt":-1.34,"q":[-2.54,null,null,null,-0.24]},{"site":"US-UMB","c":"diffuse","pt":2.77,"q":[1.93,null,null,null,3.7]},{"site":"US-UMB","c":"radiation","pt":1.43,"q":[0.5,null,null,null,2.37]},{"site":"US-xUN","c":"light","pt":-1.68,"q":[-2.9,null,null,null,-0.39]},{"site":"US-xUN","c":"diffuse","pt":4.15,"q":[3.25,null,null,null,5.14]},{"site":"US-xUN","c":"radiation","pt":2.47,"q":[1.56,null,null,null,3.4]}],"merc":[{"src":"JULES 1980","g":"mercado","v":0.409,"lo":0.065,"hi":0.753},{"src":"JULES 1999","g":"mercado","v":0.291,"lo":0.021,"hi":0.561},{"src":"US-Bi2","g":"maize","v":0.394,"lo":0.029,"hi":0.774},{"src":"US-Ne1","g":"maize","v":0.985,"lo":0.644,"hi":1.38},{"src":"US-Ne2","g":"maize","v":1.113,"lo":0.689,"hi":1.62},{"src":"US-Ne3","g":"maize","v":0.687,"lo":0.301,"hi":1.116},{"src":"US-xUN","g":"forest","v":1.012,"lo":0.637,"hi":1.514},{"src":"US-UMB","g":"forest","v":0.429,"lo":0.139,"hi":0.747},{"src":"US-MMS","g":"forest","v":0.366,"lo":0.217,"hi":0.54},{"src":"US-Ha1","g":"forest","v":0.567,"lo":0.293,"hi":0.9},{"src":"Gu et al. 1992","g":"gu","v":3.612,"lo":null,"hi":null}]};
+
+const SITES = ["US-Bi2","US-Ne1","US-Ne2","US-Ne3","US-xUN","US-UMB","US-MMS","US-Ha1"];
+const SITE_INFO = {
+  "US-Bi2": ["Irrigated maize", "maize"], "US-Ne1": ["Irrigated maize", "maize"], "US-Ne2": ["Irrigated maize", "maize"],
+  "US-Ne3": ["Rainfed maize", "maize"], "US-xUN": ["Mixed forest", "forest"], "US-UMB": ["Deciduous forest", "forest"],
+  "US-MMS": ["Deciduous forest", "forest"], "US-Ha1": ["Deciduous forest (Harvard Forest)", "forest"]
+};
+const fmt = (v, d = 1) => (v < 0 ? "−" : "+") + Math.abs(v).toFixed(d);
+
+function T() {
+  const s = getComputedStyle(document.documentElement);
+  const g = k => s.getPropertyValue(k).trim();
+  return { bg: g("--surface"), ink: g("--ink"), muted: g("--muted"), rule: g("--rule"), smoke: g("--smoke"),
+    sulfate: g("--sulfate"), forest: g("--forest"), navy: g("--navy"), mid: g("--mid"), light: g("--light"), neg: g("--neg") };
+}
+function base(t, extra) {
+  const ax = { gridcolor: t.rule, zerolinecolor: t.muted, linecolor: t.rule, tickfont: { color: t.muted, size: 12 },
+    titlefont: { color: t.ink, size: 13 }, automargin: true };
+  const lay = {
+    paper_bgcolor: t.bg, plot_bgcolor: t.bg, font: { family: "IBM Plex Sans, Helvetica, Arial, sans-serif", color: t.ink, size: 13 },
+    margin: { l: 60, r: 20, t: 20, b: 50 }, hoverlabel: { font: { family: "IBM Plex Sans, Arial, sans-serif" } },
+    legend: { orientation: "h", y: -0.18, x: 0, font: { size: 12 } },
+    xaxis: Object.assign({}, ax), yaxis: Object.assign({}, ax)
+  };
+  return deepMerge(lay, extra || {});
+}
+function deepMerge(a, b) {
+  for (const k in b) {
+    if (b[k] && typeof b[k] === "object" && !Array.isArray(b[k]) && a[k] && typeof a[k] === "object") deepMerge(a[k], b[k]);
+    else a[k] = b[k];
+  }
+  return a;
+}
+const CFG = { displayModeBar: false, responsive: true };
+function draw(id, traces, layout) { Plotly.react(id, traces, layout, CFG); }
+function seg(id, opts, init, onChange) {
+  const el = document.getElementById(id);
+  el.innerHTML = "";
+  opts.forEach(([val, lab]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = lab; b.dataset.val = val;
+    b.setAttribute("aria-pressed", String(val === init));
+    b.addEventListener("click", () => {
+      el.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+      onChange(val);
+    });
+    el.appendChild(b);
+  });
+}
+
+/* ---------- state ---------- */
+const S = { fig2: "overview", resp: "maize", gu: 4, crop: "maize", sai: "radiation", size: false };
+
+/* ---------- site table ---------- */
+(function () {
+  const tb = document.querySelector("#site-table tbody");
+  SITES.forEach(s => {
+    const r = D.bars.find(b => b.site === s && b.c === "radiation"), tot = D.bars.find(b => b.site === s && b.c === "total");
+    const g = SITE_INFO[s][1];
+    tb.insertAdjacentHTML("beforeend", `<tr><td><span class="dot" style="background:var(--${g === "maize" ? "smoke" : "forest"})"></span>${s}</td><td>${SITE_INFO[s][0]}</td><td>${r.n}</td><td>${fmt(r.v)}% <span style="color:var(--muted)">(${fmt(r.lo)} to ${fmt(r.hi)})</span></td><td>${fmt(tot.v)}% <span style="color:var(--muted)">(${fmt(tot.lo)} to ${fmt(tot.hi)})</span></td></tr>`);
+  });
+})();
+
+/* ---------- charts ---------- */
+function hms(t) {
+  draw("chart-hms", [{ x: D.hms.map(d => d[0]), y: D.hms.map(d => d[1]), type: "scatter", mode: "lines+markers",
+    line: { color: t.smoke, width: 2.5 }, marker: { size: 6 }, fill: "tozeroy", fillcolor: t.smoke + "22",
+    hovertemplate: "%{x}: %{y:.0f} smoke days<extra></extra>" }],
+    base(t, { yaxis: { title: { text: "Average US smoke days per year" }, rangemode: "tozero" }, xaxis: { dtick: 2 }, showlegend: false }));
+}
+
+const COMP = { light: ["Less total light", "#E69F00"], diffuse: ["More diffuse light", "#56B4E9"], radiation: ["Net radiation", null],
+  vpd: ["VPD", "#8c8c8c"], ta: ["Temperature", "#b07aa1"], swc: ["Soil moisture", "#7f6a4f"], total: ["Total", null] };
+function fig2(t) {
+  const RAD = "#0072B2", TOT = "#AA4499";
+  if (S.fig2 === "overview") {
+    const mk = (c, name, col) => {
+      const rows = SITES.map(s => D.bars.find(b => b.site === s && b.c === c));
+      return { type: "bar", orientation: "h", name, y: SITES, x: rows.map(r => r.v), marker: { color: col },
+        error_x: { type: "data", symmetric: false, array: rows.map(r => r.hi - r.v), arrayminus: rows.map(r => r.v - r.lo), color: t.ink, thickness: 1.2, width: 3 },
+        customdata: rows.map(r => [r.lo, r.hi, r.n]), hovertemplate: "%{y} " + name + ": %{x:.1f}% (95% CI %{customdata[0]:.1f} to %{customdata[1]:.1f}; n = %{customdata[2]})<extra></extra>" };
+    };
+    draw("chart-fig2", [mk("radiation", "Radiation effect (less light + more diffuse)", RAD), mk("total", "Total effect (radiation + weather)", TOT)],
+      base(t, { barmode: "group", bargap: 0.25, yaxis: { autorange: "reversed", ticklabelstandoff: 10 }, xaxis: { title: { text: "Change in GPP during smoke (%)" }, zeroline: true },
+        shapes: [
+          { type: "rect", xref: "paper", x0: 0, x1: 1, y0: -0.5, y1: 3.5, fillcolor: t.smoke, opacity: 0.08, line: { width: 0 }, layer: "below" },
+          { type: "rect", xref: "paper", x0: 0, x1: 1, y0: 3.5, y1: 7.5, fillcolor: t.forest, opacity: 0.08, line: { width: 0 }, layer: "below" },
+          { type: "rect", xref: "paper", x0: -0.006, x1: 0, y0: -0.45, y1: 3.45, fillcolor: t.smoke, line: { width: 0 } },
+          { type: "rect", xref: "paper", x0: -0.006, x1: 0, y0: 3.55, y1: 7.45, fillcolor: t.forest, line: { width: 0 } },
+          { type: "line", xref: "paper", x0: 0, x1: 1, y0: 3.5, y1: 3.5, line: { color: t.ink, width: 1.5 } },
+          { type: "line", x0: 0, x1: 0, y0: -0.5, y1: 7.5, line: { color: t.muted, width: 1 } }],
+        annotations: [{ xref: "paper", x: 0.006, y: -0.42, text: "<b>MAIZE</b>", showarrow: false, xanchor: "left", yanchor: "top", font: { color: t.smoke, size: 13 } },
+          { xref: "paper", x: 0.006, y: 3.58, text: "<b>FOREST</b>", showarrow: false, xanchor: "left", yanchor: "top", font: { color: t.forest, size: 13 } }] }));
+  } else {
+    const order = ["light", "diffuse", "radiation", "vpd", "ta", "swc", "total"];
+    const rows = order.map(c => D.bars.find(b => b.site === S.fig2 && b.c === c));
+    const cols = order.map(c => c === "radiation" ? RAD : c === "total" ? TOT : COMP[c][1]);
+    draw("chart-fig2", [{ type: "bar", x: order.map(c => COMP[c][0]), y: rows.map(r => r.v), marker: { color: cols },
+      error_y: { type: "data", symmetric: false, array: rows.map(r => r.hi - r.v), arrayminus: rows.map(r => r.v - r.lo), color: t.ink, thickness: 1.2, width: 4 },
+      customdata: rows.map(r => [r.lo, r.hi]), hovertemplate: "%{x}: %{y:.1f}% (95% CI %{customdata[0]:.1f} to %{customdata[1]:.1f})<extra></extra>" }],
+      base(t, { showlegend: false, yaxis: { title: { text: "Change in GPP during smoke (%)" }, zeroline: true },
+        annotations: [{ xref: "paper", yref: "paper", x: 0, y: 1.06, xanchor: "left", showarrow: false, text: document.getElementById("chart-fig2").clientWidth < 560 ? `<b>${S.fig2}</b> · n = ${rows[0].n}` : `<b>${S.fig2}</b> · ${SITE_INFO[S.fig2][0]} · n = ${rows[0].n} matched smoke time steps`, font: { color: t.muted } }],
+        shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0, line: { color: t.muted, width: 1 } }, { type: "rect", x0: 1.5, x1: 2.5, yref: "paper", y0: 0, y1: 1, fillcolor: t.rule, opacity: 0.35, line: { width: 0 }, layer: "below" }] , margin: { t: 40 } }));
+  }
+}
+
+const SIZE_LAB = { smoke_q5: "1.88", smoke_q4: "1.78", smoke_q2: "1.56", smoke_q1: "1.39", "sulfate_r0.2": "0.2", "sulfate_r0.3": "0.3", "sulfate_r0.5": "0.5", "sulfate_r0.6": "0.6" };
+function light(t) {
+  const tr = [{ type: "scattergl", mode: "markers", name: "Observed smoke time steps", x: D.pts.map(p => p[0]), y: D.pts.map(p => p[1]),
+    marker: { color: t.muted, size: 5, opacity: 0.45 }, hovertemplate: "PAR loss %{x:.1f}%, ΔDF %{y:.2f}<extra>observed</extra>" }];
+  if (S.size) {
+    Object.keys(SIZE_LAB).forEach(k => {
+      const isS = k.startsWith("smoke"), c = D.light[k];
+      tr.push({ type: "scatter", mode: "lines", name: (isS ? "Smoke, Ångström " : "Sulfate, r_eff ") + SIZE_LAB[k] + (isS ? "" : " µm"), x: c.map(p => p[0]), y: c.map(p => p[1]),
+        line: { color: isS ? t.smoke : t.sulfate, width: 1.2, dash: "dot" }, opacity: 0.8, showlegend: false,
+        hovertemplate: (isS ? "Smoke, Ångström exponent " : "Sulfate, effective radius ") + SIZE_LAB[k] + (isS ? "" : " µm") + "<br>PAR loss %{x:.1f}%, ΔDF %{y:.2f}<extra></extra>" });
+    });
+  }
+  [["smoke", "Smoke (libRadtran)", t.smoke], ["sulfate", "Sulfate, r_eff 0.4 µm (libRadtran)", t.sulfate]].forEach(([k, n, c]) => {
+    const d = D.light[k];
+    tr.push({ type: "scatter", mode: "lines", name: n, x: d.map(p => p[0]), y: d.map(p => p[1]), line: { color: c, width: 3 },
+      hovertemplate: n + "<br>PAR loss %{x:.1f}%, ΔDF %{y:.2f}<extra></extra>" });
+  });
+  tr.push({ type: "scatter", mode: "markers+text", name: "Pinatubo (Gu et al., 2003)", x: D.pin.map(p => p.pl), y: D.pin.map(p => p.ddf),
+    text: D.pin.map(p => "Pinatubo " + p.year), textposition: ["top right", "bottom right"], textfont: { color: t.ink },
+    marker: { symbol: "star", size: 15, color: t.navy, line: { color: t.bg, width: 1 } }, hovertemplate: "%{text}: PAR loss %{x:.2f}%, ΔDF %{y:.3f}<extra></extra>" });
+  draw("chart-light", tr, base(t, { xaxis: { title: { text: "PAR loss vs clean sky (%)" }, range: [-3, 35] },
+    yaxis: { title: { text: "Change in PAR diffuse fraction" }, range: [-0.12, 0.65] } }));
+}
+
+function resp(t) {
+  const g = S.resp, tr = [];
+  [["smoke", "Smoke", t.smoke], ["sulfate", "Sulfate, r_eff 0.4 µm", t.sulfate]].forEach(([k, n, c]) => {
+    const d = D.curves[g + "_" + k];
+    tr.push({ type: "scatter", mode: "lines", x: d.map(p => p[0]), y: d.map(p => p[3]), line: { width: 0 }, showlegend: false, hoverinfo: "skip" });
+    tr.push({ type: "scatter", mode: "lines", x: d.map(p => p[0]), y: d.map(p => p[2]), line: { width: 0 }, fill: "tonexty", fillcolor: c + "30", name: n + ", site range", hoverinfo: "skip" });
+    tr.push({ type: "scatter", mode: "lines", x: d.map(p => p[0]), y: d.map(p => p[1]), line: { color: c, width: 3 }, name: n + " (mean of four sites)",
+      customdata: d.map(p => [p[2], p[3]]), hovertemplate: n + ", AOD %{x:.2f}: %{y:.1f}% (sites %{customdata[0]:.1f} to %{customdata[1]:.1f})<extra></extra>" });
+  });
+  const o = D.obs.filter(r => r.g === g);
+  tr.push({ type: "scatter", mode: "markers+text", name: "Observed smoke radiation effect", x: o.map(r => r.x), y: o.map(r => r.v), text: o.map(r => r.site),
+    textposition: "middle left", textfont: { size: 11, color: t.muted }, marker: { color: t.ink, size: 8 },
+    error_y: { type: "data", symmetric: false, array: o.map(r => r.hi - r.v), arrayminus: o.map(r => r.v - r.lo), color: t.ink, thickness: 1.2, width: 3 },
+    customdata: o.map(r => [r.lo, r.hi]), hovertemplate: "%{text}: AOD %{x:.2f}, %{y:.1f}% (95% CI %{customdata[0]:.1f} to %{customdata[1]:.1f})<extra></extra>" });
+  if (g === "maize") {
+    const pc = v => 100 * (Math.exp(v / 100) - 1), m = pc(-5.5), lo = pc(-7.3), hi = pc(-3.6);
+    tr.push({ type: "scatter", mode: "markers+text", name: "Proctor et al. (2018), maize yield insolation effect", x: [0.084], y: [m], text: ["Proctor"], textposition: "middle right",
+      marker: { symbol: "diamond", size: 11, color: t.forest }, error_y: { type: "data", symmetric: false, array: [hi - m], arrayminus: [m - lo], color: t.forest, thickness: 1.5 },
+      hovertemplate: "Proctor et al. (2018): %{y:.1f}% maize yield<extra></extra>" });
+  } else {
+    tr.push({ type: "scatter", mode: "markers+text", name: "Gu et al. (2003), Pinatubo at Harvard Forest", x: D.pin.map(p => p.aod), y: D.pin.map(p => p.gpp),
+      text: D.pin.map(p => "Gu, " + p.year), textposition: "middle right", marker: { symbol: "star", size: 15, color: t.navy, line: { color: t.bg, width: 1 } },
+      hovertemplate: "%{text}: AOD %{x:.3f}, +%{y:.0f}% GPP<extra></extra>" });
+  }
+  draw("chart-resp", tr, base(t, { xaxis: { title: { text: "Added aerosol optical depth (550 nm)" }, range: [0, 0.7] },
+    yaxis: { title: { text: "Radiation effect on GPP (%)" }, range: [-10, 30], zeroline: true } }));
+}
+
+const GU = [
+  ["gu_default", "Gu default", "Gu default: clear sky, 1992 Albany radiation",
+   "Using Gu et al.'s default fitting method, their model suggests the radiative effects of wildfire smoke to increase GPP by 23% at Harvard Forest, while our regression model suggests wildfire smoke only increased GPP by about 2% due to changes in radiation."],
+  ["gu_clear", "Refit, clear sky", "Gu refit, clear sky (tower radiation)",
+   "Refitting Gu et al.'s model to the complete record of clear-sky tower radiation measurements from Harvard Forest (2012–2025 growing seasons) reduces the effect to +13%. In Gu et al.'s 1992 parameters the diffuse light response is seven times the direct one; refit to the tower it is only about twice, so moving light from direct to diffuse adds less GPP."],
+  ["gu_partly", "+ partly cloudy", "Gu refit, clear + partly cloudy",
+   "Partly cloudy time steps cover a much wider range of diffuse fractions than clear skies, including those seen during smoke, which lets the fit separate the diffuse and direct parameters. Including them reduces GPP gains to +9%."],
+  ["gu_wx", "+ weather terms", "Gu refit, clear + partly cloudy, with weather terms",
+   "Gu et al.'s model has only light inputs, but is trained on data in which a diffuse-light benefit can coincide with favorable weather (lower VPD or temperature). Adding terms for VPD, air temperature, soil moisture and solar zenith angle reduces the benefit to +1%, closely matching our results."]
+];
+function gu(t) {
+  const shown = [["regression", "Our regression", "Our regression"]].concat(GU.slice(0, S.gu));
+  const tr = [], ann = [];
+  const all = [["regression", "Our regression"]].concat(GU.map(g => [g[0], g[1]]));
+  all.forEach(([k, lab], i) => {
+    const on = i === 0 || i <= S.gu, cur = i === S.gu || (i === 0 && S.gu === 0);
+    const col = i === 0 ? t.mid : (cur ? t.smoke : t.muted);
+    if (!on) return;
+    const y = D.gu_days[k];
+    tr.push({ type: "box", y, x: y.map(() => lab), name: lab, boxpoints: "all", jitter: 0.5, pointpos: 0, marker: { color: col, size: 5, opacity: 0.75 },
+      line: { color: col, width: 1.5 }, fillcolor: col + "33", whiskerwidth: 0.4, showlegend: false, customdata: D.gu_dates,
+      hovertemplate: lab + "<br>%{customdata}: %{y:.1f}%<extra></extra>" });
+    ann.push({ x: lab, y: -16, text: "<b>" + fmt(D.gu_sum[k], 0) + "%</b>", showarrow: false, font: { size: 15, color: i === 0 ? t.mid : (cur ? t.smoke : t.muted) } });
+  });
+  const lay = base(t, { yaxis: { title: { text: "GPP change on smoke days (%)" }, range: [-20, 62], zeroline: true },
+    xaxis: { type: "category", categoryorder: "array", categoryarray: all.map(a => a[1]), range: [-0.5, 4.5] }, annotations: ann, margin: { b: 40 } });
+  draw("chart-gu", tr, lay);
+  const note = S.gu === 0 ? "Our regression, fitted to Harvard Forest tower data: smoke-induced radiation changes raise GPP by about 2%." : GU[S.gu - 1][3];
+  document.getElementById("gu-note").textContent = note;
+}
+
+function resid(t) {
+  draw("chart-resid", [
+    { type: "scatter", mode: "lines+markers", name: "Rest of world", x: D.resid.year, y: D.resid.row, line: { color: t.muted, width: 2.5 }, marker: { size: 7 }, hovertemplate: "Rest of world %{x}: %{y:.1f}%<extra></extra>" },
+    { type: "scatter", mode: "lines+markers", name: "Southern Africa", x: D.resid.year, y: D.resid.saf, line: { color: t.smoke, width: 2.5 }, marker: { size: 7 }, hovertemplate: "Southern Africa %{x}: %{y:.1f}%<extra></extra>" }
+  ], base(t, { yaxis: { title: { text: "Maize yield change (%)" }, zeroline: true }, xaxis: { dtick: 1, title: { text: "Year" } },
+    shapes: [{ type: "rect", x0: 1991.5, x1: 1992.5, yref: "paper", y0: 0, y1: 1, fillcolor: t.rule, opacity: 0.45, line: { width: 0 }, layer: "below" }],
+    annotations: [{ x: 1992, yref: "paper", y: 1.02, text: "Year after Pinatubo", showarrow: false, font: { size: 12, color: t.muted } }] }));
+}
+
+const VERS = ["Proctor et al. (2018)", "Area-weighted", "Area-weighted, southern Africa excluded"];
+const EFF = [["tas", "Temperature"], ["saod", "Insolation"], ["clt", "Cloud"], ["pr", "Precipitation"], ["total", "Total"]];
+function proctor(t) {
+  const cols = [t.navy, t.mid, t.light];
+  const tr = VERS.map((v, j) => {
+    const rows = EFF.map(([e]) => D.proctor.find(r => r.crop === S.crop && r.ver === v && r.e === e));
+    return { type: "bar", name: v, x: EFF.map(e => e[1]), y: rows.map(r => r.v), marker: { color: cols[j] },
+      error_y: { type: "data", array: rows.map(r => r.ci), color: t.ink, thickness: 1.2, width: 3 },
+      customdata: rows.map(r => [r.v - r.ci, r.v + r.ci]), hovertemplate: v + "<br>%{x}: %{y:.2f} (95% CI %{customdata[0]:.2f} to %{customdata[1]:.2f})<extra></extra>" };
+  });
+  draw("chart-proctor", tr, base(t, { barmode: "group", bargap: 0.22, yaxis: { title: { text: "Change in yield (log × 100)" }, range: [-8, 10.5], zeroline: true },
+    shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0, line: { color: t.ink, width: 1 } }] }));
+}
+
+function sai(t) {
+  const narrow = document.getElementById("chart-sai").clientWidth < 560;
+  const panels = [["light", "Less total light", t.smoke], ["diffuse", "More diffuse light", t.sulfate], ["radiation", "Net radiation effect", t.navy]];
+  const ys = SITES.map(s => narrow ? s : s + " " + SITE_INFO[s][0].split(" (")[0].toLowerCase());
+  const tr = [], lay = base(t, { showlegend: false, bargap: 0.4, margin: { t: 40, b: 60, l: narrow ? 60 : 190 } }), shapes = [], ann = [];
+  const gap = 0.04, w = (1 - 2 * gap) / 3;
+  panels.forEach(([c, lab, col], k) => {
+    const rows = SITES.map(s => D.sai.find(r => r.site === s && r.c === c));
+    const xa = k ? "x" + (k + 1) : "x", ya = k ? "y" + (k + 1) : "y";
+    tr.push({ type: "bar", orientation: "h", y: ys, x: rows.map(r => r.pt), xaxis: xa, yaxis: ya, marker: { color: col }, width: 0.6,
+      error_x: { type: "data", symmetric: false, array: rows.map(r => r.q[4] - r.pt), arrayminus: rows.map(r => r.pt - r.q[0]), color: t.ink, thickness: 1.5, width: 0 },
+      customdata: rows.map(r => [r.q[0], r.q[4]]), hovertemplate: "%{y}<br>" + lab + ": %{x:.2f}% (95% CI %{customdata[0]:.2f} to %{customdata[1]:.2f})<extra></extra>" });
+    const lo = Math.min(0, ...rows.map(r => r.q[0])), hi = Math.max(0, ...rows.map(r => r.q[4])), pad = 0.08 * (hi - lo);
+    const d0 = k * (w + gap);
+    lay["xaxis" + (k ? k + 1 : "")] = { domain: [d0, d0 + w], anchor: ya, range: [lo - pad, hi + pad], dtick: k === 2 ? 2 : (narrow ? 5 : 2.5), zeroline: false, showgrid: true, gridcolor: t.rule, griddash: "dot",
+      tickfont: { color: t.muted, size: 12 }, linecolor: t.ink, showline: true, automargin: true, title: k === 1 ? { text: "GPP change, SAI vs SSP2-4.5 (%)", font: { size: 13, color: t.ink } } : undefined };
+    lay["yaxis" + (k ? k + 1 : "")] = { anchor: xa, type: "category", autorange: "reversed", showticklabels: k === 0, tickfont: { color: t.ink, size: 13 }, showgrid: false,
+      showline: true, linecolor: t.ink, ticks: "", matches: k ? "y" : undefined, automargin: true };
+    shapes.push({ type: "line", xref: xa, yref: "paper", x0: 0, x1: 0, y0: 0, y1: 1, line: { color: t.ink, width: 1, dash: "dot" } });
+    shapes.push({ type: "line", xref: "paper", x0: d0, x1: d0 + w, yref: ya, y0: 3.5, y1: 3.5, line: { color: t.muted, width: 1 } });
+    ann.push({ xref: "paper", yref: "paper", x: d0, y: 1.02, xanchor: "left", yanchor: "bottom", showarrow: false, text: "(" + "abc"[k] + ") " + (narrow ? ["Light", "Diffuse", "Net"][k] : lab), font: { size: narrow ? 12 : 14, color: t.ink } });
+  });
+  lay.shapes = shapes; lay.annotations = ann;
+  draw("chart-sai", tr, lay);
+}
+
+function merc(t) {
+  const lab = r => r.src.replace("JULES", "Mercado et al. (JULES)").replace("Gu et al. 1992", "Gu et al. (2003), 1992");
+  const rows = D.merc.filter(r => r.g !== "gu");
+  const col = r => r.g === "mercado" ? t.muted : r.g === "maize" ? t.smoke : r.g === "forest" ? t.forest : t.navy;
+  draw("chart-merc", [{ type: "scatter", mode: "markers", x: rows.map(lab), y: rows.map(r => r.v), marker: { color: rows.map(col), size: 11, symbol: rows.map(r => r.g === "gu" ? "star" : "circle") },
+    error_y: { type: "data", symmetric: false, array: rows.map(r => r.hi == null ? 0 : r.hi - r.v), arrayminus: rows.map(r => r.lo == null ? 0 : r.v - r.lo), color: t.muted, thickness: 1.2, width: 3 },
+    hovertemplate: "%{x}: %{y:.2f}% GPP per +0.01 diffuse fraction<extra></extra>" }],
+    base(t, { showlegend: false, yaxis: { title: { text: "GPP change per +0.01 diffuse fraction (%)" }, rangemode: "tozero" }, xaxis: { tickangle: -30 } }));
+}
+
+function recon(t) {
+  const g = [["Gu default", D.gu_sum.gu_default], ["Refit, clear sky", D.gu_sum.gu_clear], ["+ partly cloudy", D.gu_sum.gu_partly], ["+ weather terms", D.gu_sum.gu_wx]];
+  const p = VERS.map(v => D.proctor.find(r => r.crop === "maize" && r.ver === v && r.e === "saod"));
+  const pl = ["As published", "Area-weighted", "+ southern Africa excluded"];
+  const axf = { gridcolor: t.rule, zerolinecolor: t.muted, linecolor: t.rule, tickfont: { color: t.muted, size: 12 }, automargin: true };
+  draw("chart-recon", [
+    { type: "scatter", mode: "lines+markers+text", x: g.map(d => d[1]), y: g.map(d => d[0]), line: { color: t.muted, width: 1.5 },
+      marker: { size: 12, color: [t.forest, t.smoke, t.smoke, t.smoke] }, text: g.map(d => fmt(d[1], 0) + "%"), textposition: "top center", cliponaxis: false,
+      hovertemplate: "%{y}: %{x:.1f}%<extra>Gu et al. model</extra>", showlegend: false },
+    { type: "scatter", mode: "markers+text", x: [D.gu_sum.regression], y: ["Our regression"], marker: { size: 12, color: t.mid, symbol: "diamond" },
+      text: [fmt(D.gu_sum.regression, 0) + "%"], textposition: "top center", cliponaxis: false, hovertemplate: "Our regression: %{x:.1f}%<extra></extra>", showlegend: false },
+    { type: "scatter", mode: "markers+text", x: p.map(r => r.v), y: pl, xaxis: "x2", yaxis: "y2", marker: { size: 12, color: [t.neg, t.mid, t.light], line: { color: t.ink, width: 0.5 } },
+      error_x: { type: "data", array: p.map(r => r.ci), color: t.muted, thickness: 1.2, width: 3 }, text: p.map(r => fmt(r.v, 1)), textposition: "top center", cliponaxis: false,
+      hovertemplate: "%{y}: %{x:.2f} log points × 100 (95% CI ±%{error_x.array:.2f})<extra>Proctor maize insolation</extra>", showlegend: false }
+  ], base(t, {
+    margin: { l: 130, t: 44, b: 50 },
+    xaxis: { domain: [0, 0.43], title: { text: "Harvard Forest GPP change (%)" }, range: [-3, 28], zeroline: true },
+    yaxis: { type: "category", categoryorder: "array", categoryarray: ["Gu default", "Refit, clear sky", "+ partly cloudy", "+ weather terms", "Our regression"], range: [4.5, -0.7] },
+    xaxis2: Object.assign({ domain: [0.63, 1], title: { text: "Maize yield, insolation (log × 100)", font: { color: t.ink, size: 13 } }, range: [-9, 4], zeroline: true, anchor: "y2" }, axf),
+    yaxis2: Object.assign({ type: "category", categoryorder: "array", categoryarray: pl, range: [2.5, -0.7], anchor: "x2" }, axf),
+    annotations: [{ xref: "paper", yref: "paper", x: 0, y: 1.12, xanchor: "left", showarrow: false, text: "<b>Gu et al. (2003)</b>" },
+      { xref: "paper", yref: "paper", x: 0.63, y: 1.12, xanchor: "left", showarrow: false, text: "<b>Proctor et al. (2018)</b>" }]
+  }));
+}
+
+function renderAll() {
+  const t = T();
+  fig2(t); light(t); resp(t); gu(t); resid(t); proctor(t); sai(t); merc(t); recon(t);
+}
+
+seg("seg-fig2", [["overview", "All sites"]].concat(SITES.map(s => [s, s])), S.fig2, v => { S.fig2 = v; fig2(T()); });
+seg("seg-resp", [["maize", "Maize"], ["forest", "Forest"]], S.resp, v => { S.resp = v; resp(T()); });
+seg("seg-gu", [["0", "Our regression"]].concat(GU.map((g, i) => [String(i + 1), (i + 1) + ". " + g[1]])), String(S.gu), v => { S.gu = +v; gu(T()); });
+seg("seg-crop", [["maize", "Maize"], ["soy", "Soy"], ["rice", "Rice"], ["wheat", "Wheat"]], S.crop, v => { S.crop = v; proctor(T()); });
+document.getElementById("chk-size").addEventListener("change", e => { S.size = e.target.checked; light(T()); });
+
+renderAll();
+new MutationObserver(renderAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll); } catch (e) {}
+</script>
+<script>
+// when shown inside the personal site's "Current project" page: light theme, no sticky nav, section links scroll the outer page
+(function () {
+  var f = window.frameElement;
+  if (!f) return;
+  document.documentElement.setAttribute("data-theme", "light");
+  var st = document.createElement("style");
+  st.textContent = "nav.toc{position:static} header.hero{padding-top:24px}";
+  document.head.appendChild(st);
+  document.querySelectorAll("nav.toc a").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      var el = document.querySelector(a.getAttribute("href"));
+      if (!el) return;
+      e.preventDefault();
+      parent.scrollTo({ top: f.getBoundingClientRect().top + parent.scrollY + el.offsetTop - 10, behavior: "smooth" });
+    });
+  });
+})();
+</script>
+</body>
+</html>
