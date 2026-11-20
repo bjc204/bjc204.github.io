@@ -605,3 +605,7 @@ a.pagination-item:hover {
 
 
 
+
+/* Hide the "Current project" page from the sidebar.
+   To show it again, delete this rule or wrap it in a comment. */
+a.sidebar-nav-item[href="Current_project.html"] { display: none; }
