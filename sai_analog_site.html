@@ -4,9 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Smoke, Volcanoes and Plant Light</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <style>
 /* layout: one reading column (~68ch) with charts allowed to run a little wider; sticky section nav */
@@ -23,22 +20,10 @@
   --mid: #2171b5;
   --light: #9ecae1;
   --neg: #b2402f;
-  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --font-ui: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-display: Aptos, "Aptos Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-body: Aptos, "Aptos Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-ui: Aptos, "Aptos Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #11161c; --surface: #19212a; --ink: #e6ebf0; --muted: #9aa7b4; --rule: #2e3a46;
-    --smoke: #e39a2e; --sulfate: #7fb2e5; --forest: #5fb57d; --navy: #9cc3ee; --mid: #4f95d6; --light: #2c5d8a;
-    --neg: #e2786a; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #11161c; --surface: #19212a; --ink: #e6ebf0; --muted: #9aa7b4; --rule: #2e3a46;
-  --smoke: #e39a2e; --sulfate: #7fb2e5; --forest: #5fb57d; --navy: #9cc3ee; --mid: #4f95d6; --light: #2c5d8a;
-  --neg: #e2786a; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -362,8 +347,8 @@ function base(t, extra) {
   const ax = { gridcolor: t.rule, zerolinecolor: t.muted, linecolor: t.rule, tickfont: { color: t.muted, size: 12 },
     titlefont: { color: t.ink, size: 13 }, automargin: true };
   const lay = {
-    paper_bgcolor: t.bg, plot_bgcolor: t.bg, font: { family: "IBM Plex Sans, Helvetica, Arial, sans-serif", color: t.ink, size: 13 },
-    margin: { l: 60, r: 20, t: 20, b: 50 }, hoverlabel: { font: { family: "IBM Plex Sans, Arial, sans-serif" } },
+    paper_bgcolor: t.bg, plot_bgcolor: t.bg, font: { family: "Aptos, Segoe UI, Helvetica, Arial, sans-serif", color: t.ink, size: 13 },
+    margin: { l: 60, r: 20, t: 20, b: 50 }, hoverlabel: { font: { family: "Aptos, Segoe UI, Arial, sans-serif" } },
     legend: { orientation: "h", y: -0.18, x: 0, font: { size: 12 } },
     xaxis: Object.assign({}, ax), yaxis: Object.assign({}, ax)
   };
@@ -617,7 +602,6 @@ document.getElementById("chk-size").addEventListener("change", e => { S.size = e
 
 renderAll();
 new MutationObserver(renderAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll); } catch (e) {}
 </script>
 <script>
 // when shown inside the personal site's "Current project" page: light theme, no sticky nav, section links scroll the outer page
