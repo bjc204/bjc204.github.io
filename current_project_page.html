@@ -406,7 +406,7 @@ const S = { fig2: "overview", resp: "maize", gu: 4, crop: "maize", sai: "radiati
   SITES.forEach(s => {
     const r = D.bars.find(b => b.site === s && b.c === "radiation"), tot = D.bars.find(b => b.site === s && b.c === "total");
     const g = SITE_INFO[s][1];
-    tb.insertAdjacentHTML("beforeend", `<tr><td><span class="dot" style="background:var(--${g === "maize" ? "smoke" : "forest"})"></span>${s}</td><td>${SITE_INFO[s][0]}</td><td>${r.n}</td><td>${fmt(r.v)}% <span style="color:var(--muted)">(${fmt(r.lo)} to ${fmt(r.hi)})</span></td><td>${fmt(tot.v)}% <span style="color:var(--muted)">(${fmt(tot.lo)} to ${fmt(tot.hi)})</span></td></tr>`);
+    tb.insertAdjacentHTML("beforeend", `<tr><td><span class="dot" style="background:var(--${g === "maize" ? "smoke" : "forest"})"></span>${s}</td><td>${SITE_INFO[s][0]}</td><td>${r.n}</td><td>${fmt(r.v)}%</td><td>${fmt(tot.v)}%</td></tr>`);
   });
 })();
 
