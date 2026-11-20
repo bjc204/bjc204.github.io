@@ -425,21 +425,19 @@ function fig2(t) {
   if (S.fig2 === "overview") {
     const mk = (c, name, col) => {
       const rows = SITES.map(s => D.bars.find(b => b.site === s && b.c === c));
-      return { type: "bar", orientation: "h", name, y: SITES, x: rows.map(r => r.v), marker: { color: col },
-        error_x: { type: "data", symmetric: false, array: rows.map(r => r.hi - r.v), arrayminus: rows.map(r => r.v - r.lo), color: t.ink, thickness: 1.2, width: 3 },
-        customdata: rows.map(r => [r.lo, r.hi, r.n]), hovertemplate: "%{y} " + name + ": %{x:.1f}% (95% CI %{customdata[0]:.1f} to %{customdata[1]:.1f}; n = %{customdata[2]})<extra></extra>" };
+      return { type: "bar", name, x: SITES, y: rows.map(r => r.v), marker: { color: col },
+        error_y: { type: "data", symmetric: false, array: rows.map(r => r.hi - r.v), arrayminus: rows.map(r => r.v - r.lo), color: t.ink, thickness: 1.2, width: 3 },
+        customdata: rows.map(r => [r.lo, r.hi, r.n]), hovertemplate: "%{x} " + name + ": %{y:.1f}% (95% CI %{customdata[0]:.1f} to %{customdata[1]:.1f}; n = %{customdata[2]})<extra></extra>" };
     };
     draw("chart-fig2", [mk("radiation", "Radiation effect (less light + more diffuse)", RAD), mk("total", "Total effect (radiation + weather)", TOT)],
-      base(t, { barmode: "group", bargap: 0.25, yaxis: { autorange: "reversed", ticklabelstandoff: 10 }, xaxis: { title: { text: "Change in GPP during smoke (%)" }, zeroline: true },
+      base(t, { barmode: "group", bargap: 0.25, xaxis: { type: "category" }, yaxis: { title: { text: "Change in GPP during smoke (%)" }, zeroline: true }, margin: { t: 34 },
         shapes: [
-          { type: "rect", xref: "paper", x0: 0, x1: 1, y0: -0.5, y1: 3.5, fillcolor: t.smoke, opacity: 0.08, line: { width: 0 }, layer: "below" },
-          { type: "rect", xref: "paper", x0: 0, x1: 1, y0: 3.5, y1: 7.5, fillcolor: t.forest, opacity: 0.08, line: { width: 0 }, layer: "below" },
-          { type: "rect", xref: "paper", x0: -0.006, x1: 0, y0: -0.45, y1: 3.45, fillcolor: t.smoke, line: { width: 0 } },
-          { type: "rect", xref: "paper", x0: -0.006, x1: 0, y0: 3.55, y1: 7.45, fillcolor: t.forest, line: { width: 0 } },
-          { type: "line", xref: "paper", x0: 0, x1: 1, y0: 3.5, y1: 3.5, line: { color: t.ink, width: 1.5 } },
-          { type: "line", x0: 0, x1: 0, y0: -0.5, y1: 7.5, line: { color: t.muted, width: 1 } }],
-        annotations: [{ xref: "paper", x: 0.006, y: -0.42, text: "<b>MAIZE</b>", showarrow: false, xanchor: "left", yanchor: "top", font: { color: t.smoke, size: 13 } },
-          { xref: "paper", x: 0.006, y: 3.58, text: "<b>FOREST</b>", showarrow: false, xanchor: "left", yanchor: "top", font: { color: t.forest, size: 13 } }] }));
+          { type: "rect", yref: "paper", y0: 0, y1: 1, x0: -0.5, x1: 3.5, fillcolor: t.smoke, opacity: 0.08, line: { width: 0 }, layer: "below" },
+          { type: "rect", yref: "paper", y0: 0, y1: 1, x0: 3.5, x1: 7.5, fillcolor: t.forest, opacity: 0.08, line: { width: 0 }, layer: "below" },
+          { type: "line", yref: "paper", y0: 0, y1: 1, x0: 3.5, x1: 3.5, line: { color: t.ink, width: 1.5 } },
+          { type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0, line: { color: t.muted, width: 1 } }],
+        annotations: [{ yref: "paper", x: 1.5, y: 1.02, text: "<b>MAIZE</b>", showarrow: false, yanchor: "bottom", font: { color: t.smoke, size: 13 } },
+          { yref: "paper", x: 5.5, y: 1.02, text: "<b>FOREST</b>", showarrow: false, yanchor: "bottom", font: { color: t.forest, size: 13 } }] }));
   } else {
     const order = ["light", "diffuse", "radiation", "vpd", "ta", "swc", "total"];
     const rows = order.map(c => D.bars.find(b => b.site === S.fig2 && b.c === c));
