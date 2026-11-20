@@ -302,10 +302,6 @@ footer { padding: 30px 0 60px; font-family: var(--font-ui); font-size: 14px; col
     <div class="prose">
       <p>We use wildfire smoke as a natural analog for SAI, demonstrating that its radiative effects are similar to those of sulfate aerosols, resulting in an increase of GPP. Our analysis suggests radiative effects from SAI would range from neutral to slightly positive, with potentially large increases in the land carbon sink. Correcting limitations in previous studies aligns both modeling and observational evidence.</p>
     </div>
-    <div class="figure">
-      <div id="chart-recon" class="chart short" role="img" aria-label="Before and after estimates for Gu and Proctor"></div>
-      <p class="caption"><b>Before and after the corrections.</b> Left: Gu et al.'s model at Harvard Forest, as published and after each correction, next to our regression. Right: Proctor et al.'s maize insolation effect as published, area-weighted, and area-weighted with southern Africa excluded (log points × 100, with 95% confidence intervals).</p>
-    </div>
     <div class="prose">
       <p>Multiple lines of evidence from wildfire smoke, volcanic eruptions, air pollution, and numerical modeling now broadly converge on the conclusion that aerosols similar to those of SAI would tend to have a positive radiative effect on plant photosynthesis.</p>
     </div>
@@ -593,34 +589,9 @@ function merc(t) {
     base(t, { showlegend: false, yaxis: { title: { text: "GPP change per +0.01 diffuse fraction (%)" }, rangemode: "tozero" }, xaxis: { tickangle: -30 } }));
 }
 
-function recon(t) {
-  const g = [["Gu default", D.gu_sum.gu_default], ["Refit, clear sky", D.gu_sum.gu_clear], ["+ partly cloudy", D.gu_sum.gu_partly], ["+ weather terms", D.gu_sum.gu_wx]];
-  const p = VERS.map(v => D.proctor.find(r => r.crop === "maize" && r.ver === v && r.e === "saod"));
-  const pl = ["As published", "Area-weighted", "+ southern Africa excluded"];
-  const axf = { gridcolor: t.rule, zerolinecolor: t.muted, linecolor: t.rule, tickfont: { color: t.muted, size: 12 }, automargin: true };
-  draw("chart-recon", [
-    { type: "scatter", mode: "lines+markers+text", x: g.map(d => d[1]), y: g.map(d => d[0]), line: { color: t.muted, width: 1.5 },
-      marker: { size: 12, color: [t.forest, t.smoke, t.smoke, t.smoke] }, text: g.map(d => fmt(d[1], 0) + "%"), textposition: "top center", cliponaxis: false,
-      hovertemplate: "%{y}: %{x:.1f}%<extra>Gu et al. model</extra>", showlegend: false },
-    { type: "scatter", mode: "markers+text", x: [D.gu_sum.regression], y: ["Our regression"], marker: { size: 12, color: t.mid, symbol: "diamond" },
-      text: [fmt(D.gu_sum.regression, 0) + "%"], textposition: "top center", cliponaxis: false, hovertemplate: "Our regression: %{x:.1f}%<extra></extra>", showlegend: false },
-    { type: "scatter", mode: "markers+text", x: p.map(r => r.v), y: pl, xaxis: "x2", yaxis: "y2", marker: { size: 12, color: [t.neg, t.mid, t.light], line: { color: t.ink, width: 0.5 } },
-      error_x: { type: "data", array: p.map(r => r.ci), color: t.muted, thickness: 1.2, width: 3 }, text: p.map(r => fmt(r.v, 1)), textposition: "top center", cliponaxis: false,
-      hovertemplate: "%{y}: %{x:.2f} log points × 100 (95% CI ±%{error_x.array:.2f})<extra>Proctor maize insolation</extra>", showlegend: false }
-  ], base(t, {
-    margin: { l: 130, t: 44, b: 50 },
-    xaxis: { domain: [0, 0.43], title: { text: "Harvard Forest GPP change (%)" }, range: [-3, 28], zeroline: true },
-    yaxis: { type: "category", categoryorder: "array", categoryarray: ["Gu default", "Refit, clear sky", "+ partly cloudy", "+ weather terms", "Our regression"], range: [4.5, -0.7] },
-    xaxis2: Object.assign({ domain: [0.63, 1], title: { text: "Maize yield, insolation (log × 100)", font: { color: t.ink, size: 13 } }, range: [-9, 4], zeroline: true, anchor: "y2" }, axf),
-    yaxis2: Object.assign({ type: "category", categoryorder: "array", categoryarray: pl, range: [2.5, -0.7], anchor: "x2" }, axf),
-    annotations: [{ xref: "paper", yref: "paper", x: 0, y: 1.12, xanchor: "left", showarrow: false, text: "<b>Gu et al. (2003)</b>" },
-      { xref: "paper", yref: "paper", x: 0.63, y: 1.12, xanchor: "left", showarrow: false, text: "<b>Proctor et al. (2018)</b>" }]
-  }));
-}
-
 function renderAll() {
   const t = T();
-  fig2(t); light(t); resp(t); gu(t); resid(t); proctor(t); sai(t); merc(t); recon(t);
+  fig2(t); light(t); resp(t); gu(t); resid(t); proctor(t); sai(t); merc(t);
 }
 
 seg("seg-fig2", [["overview", "All sites"]].concat(SITES.map(s => [s, s])), S.fig2, v => { S.fig2 = v; fig2(T()); });
